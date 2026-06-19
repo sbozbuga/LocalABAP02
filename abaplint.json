@@ -1,0 +1,86 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/npm/abaplint@latest/schema.json",
+
+  "global": {
+    "abapVersion": "v750",
+    "ignoreSyntaxErrors": false
+  },
+
+  "syntax": {
+    "version": "Standard",
+    "errorNamespace": "^(\\/[Cc][Tt][Dd][Ii]\\/|Z|Y|LCL_|TY_|LIF_)"
+  },
+
+  "rules": {
+    "line_length": {
+      "maxLength": 120
+    },
+
+    "indentation": {
+      "spaces": 2
+    },
+
+    "max_one_statement": true,
+    "no_trailing_whitespace": true,
+    "newline_between_methods": true,
+
+    "commented_code": true,
+    "empty_statement": true,
+
+    "unused_variables": true,
+    "unused_parameters": true,
+    "unused_types": true,
+
+    "prefer_inline": true,
+    "prefer_is_not": true,
+    "prefer_corresponding": true,
+
+    "align_parameters": true,
+    "align_assignments": true,
+
+    "check_subrc": true,
+    "constructor_visibility": true,
+    "raise_type": true,
+
+    "method_parameter_order": true,
+
+    "call_transaction_authorization_check": true,
+
+    "select_performance": true,
+    "sql_escape_host_variables": true,
+
+    "use_line_exists": true,
+    "prefer_xsdbool": true,
+
+    "boolean_not": true,
+
+    "avoid_use": {
+      "FORM": true,
+      "EXEC SQL": true
+    },
+
+    "forbidden_statements": {
+      "statements": [
+        "GENERATE SUBROUTINE POOL"
+      ]
+    },
+
+    "select_single_full_key": false,
+    "strict_sql": false,
+
+    "no_globals": false,
+
+    "test_class": {
+      "allowUnused": true
+    },
+    
+    "object_naming": {
+      "clas": "^(\\/[Cc][Tt][Dd][Ii]\\/)?(ZC(L|X)|(CL|CX))_",
+      "intf": "^(\\/[Cc][Tt][Dd][Ii]\\/)?(ZIF|IF)_"
+    }
+  },
+
+  "ignore": [
+    "src/templates/*"
+  ]
+}

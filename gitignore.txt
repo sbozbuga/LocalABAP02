@@ -1,0 +1,42 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.env
+
+# Node (if you locally run abaplint)
+node_modules/
+
+# Eclipse / ADT
+.project
+.classpath
+.settings/
+
+# Temp files
+*.tmp
+*.log
+
+abap-mcp-server/*.*
+vsp.exe
+dist/
+
+# Exclude workshop_m function group
+src/#ctdi#workshop_m.fugr.*
+
+# Exclude repair_d SFP object
+#src/#ctdi#repair_d.sf*
+
+.vsp.json
+zsb_export/
+src/foreignobj.csv
+src/missing_foreignobj.csv
+
+src/#ctdi#copy_foreign_ddic.prog*
