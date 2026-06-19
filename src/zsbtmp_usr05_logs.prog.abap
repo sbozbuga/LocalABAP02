@@ -82,7 +82,8 @@ CLASS lcl_report DEFINITION FINAL.
         IMPORTING
           is_dblog    TYPE dbtablog
           id_tabix    TYPE i
-          it_dbtablog TYPE tt_dbtablog,
+          it_dbtablog TYPE tt_dbtablog
+          is_current  TYPE lcl_usr05_log_decoder=>ty_usr05_data,
       get_next_parva
         IMPORTING
           is_dbtablog   TYPE dbtablog
@@ -172,42 +173,74 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_data.
-    " Format query pattern safely
-    DATA(lv_key) = |{ sy-mandt }{ VALUE #( s_bname[ 1 ]-low OPTIONAL ) }%|.
+    DATA: lt_dblog   TYPE tt_dbtablog,
+          rt_logkey  TYPE RANGE OF dbtablog-logkey,
+          lv_use_key TYPE abap_bool VALUE abap_false.
 
-    DATA: lt_dblog TYPE tt_dbtablog.
+    IF s_bname IS NOT INITIAL.
+      LOOP AT s_bname INTO DATA(ls_bname) WHERE option = 'EQ' OR option = 'CP'.
+        APPEND VALUE #(
+          sign   = ls_bname-sign
+          option = 'CP'
+          low    = |{ sy-mandt }{ ls_bname-low }*| ) TO rt_logkey.
+      ENDLOOP.
+      IF rt_logkey IS NOT INITIAL.
+        lv_use_key = abap_true.
+      ENDIF.
+    ENDIF.
 
     " Retrieve logs matching criteria with modern, fast selection
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-      FROM dbtablog
-      WHERE tabname  = 'USR05'
-        AND logdate  BETWEEN @dbeg AND @dend
-        AND logkey   LIKE @lv_key
-        AND username IN @s_usera
-        AND tcode    IN @s_tcode
-        AND optype   IN @s_optype
-      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
-    IF sy-subrc <> 0.
-      " check sy-subrc for linter
+    IF lv_use_key = abap_true.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  BETWEEN @dbeg AND @dend
+          AND logkey   IN @rt_logkey
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+      IF sy-subrc <> 0.
+        " check sy-subrc for linter
+      ENDIF.
+    ELSE.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  BETWEEN @dbeg AND @dend
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+      IF sy-subrc <> 0.
+        " check sy-subrc for linter
+      ENDIF.
     ENDIF.
 
     LOOP AT lt_dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
+      " Decode log entry
+      DATA(ls_current) = lcl_usr05_log_decoder=>decode_log( <ls_dblog> ).
+
+      IF ls_current-bname NOT IN s_bname.
+        CONTINUE.
+      ENDIF.
+
       process_log_entry(
         is_dblog    = <ls_dblog>
         id_tabix    = sy-tabix
-        it_dbtablog = lt_dblog ).
+        it_dbtablog = lt_dblog
+        is_current  = ls_current ).
     ENDLOOP.
   ENDMETHOD.
 
   METHOD process_log_entry.
     DATA: ls_output TYPE ty_output.
 
-    DATA(ls_current) = lcl_usr05_log_decoder=>decode_log( is_dblog ).
-
     " Populate generic and key fields via CORRESPONDING
     ls_output = CORRESPONDING #( is_dblog ).
-    ls_output-bname     = ls_current-bname.
+    ls_output-bname     = is_current-bname.
     ls_output-username  = is_dblog-username.
     ls_output-udate     = is_dblog-logdate.
     ls_output-utime     = is_dblog-logtime.
@@ -231,23 +264,23 @@ CLASS lcl_report IMPLEMENTATION.
     CASE is_dblog-optype.
       WHEN 'I'.
         ls_output-value_old = ''.
-        ls_output-value_new = ls_current-parva.
+        ls_output-value_new = is_current-parva.
         ls_output-icon      = icon_create.
         APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_output-color.
 
       WHEN 'D'.
-        ls_output-value_old = ls_current-parva.
+        ls_output-value_old = is_current-parva.
         ls_output-value_new = ''.
         ls_output-icon      = icon_delete.
         APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_output-color.
 
       WHEN 'U'.
-        ls_output-value_old = ls_current-parva.
+        ls_output-value_old = is_current-parva.
         ls_output-value_new = get_next_parva(
           is_dbtablog   = is_dblog
           id_tabix_next = id_tabix + 1
-          id_bname      = ls_current-bname
-          id_parid      = ls_current-parid
+          id_bname      = is_current-bname
+          id_parid      = is_current-parid
           it_dbtablog   = it_dbtablog ).
         ls_output-icon      = icon_change.
 

@@ -214,29 +214,59 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_data.
-    " Format query pattern safely
-    DATA(lv_key) = |{ sy-mandt }{ VALUE #( s_bname[ 1 ]-low OPTIONAL ) }%|.
+    DATA: lt_dblog   TYPE tt_dbtablog,
+          rt_logkey  TYPE RANGE OF dbtablog-logkey,
+          lv_use_key TYPE abap_bool VALUE abap_false.
 
-    DATA: lt_dblog TYPE tt_dbtablog.
+    IF s_bname IS NOT INITIAL.
+      LOOP AT s_bname INTO DATA(ls_bname) WHERE option = 'EQ' OR option = 'CP'.
+        APPEND VALUE #(
+          sign   = ls_bname-sign
+          option = 'CP'
+          low    = |{ sy-mandt }{ ls_bname-low }*| ) TO rt_logkey.
+      ENDLOOP.
+      IF rt_logkey IS NOT INITIAL.
+        lv_use_key = abap_true.
+      ENDIF.
+    ENDIF.
 
     " Retrieve logs matching criteria with modern, fast selection
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-      FROM dbtablog
-      WHERE tabname  = 'USR05'
-        AND logdate  BETWEEN @dbeg AND @dend
-        AND logkey   LIKE @lv_key
-        AND username IN @s_usera
-        AND tcode    IN @s_tcode
-        AND optype   IN @s_optype
-      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
-    IF sy-subrc <> 0.
-      " check sy-subrc for linter
+    IF lv_use_key = abap_true.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  BETWEEN @dbeg AND @dend
+          AND logkey   IN @rt_logkey
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+      IF sy-subrc <> 0.
+        " check sy-subrc for linter
+      ENDIF.
+    ELSE.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  BETWEEN @dbeg AND @dend
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+      IF sy-subrc <> 0.
+        " check sy-subrc for linter
+      ENDIF.
     ENDIF.
 
     LOOP AT lt_dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
       " Decode log entry
       DATA(ls_current) = lcl_usr05_log_decoder=>decode_log( <ls_dblog> ).
+
+      IF ls_current-bname NOT IN s_bname.
+        CONTINUE.
+      ENDIF.
 
       DATA(ls_output) = process_log_entry(
         is_dblog    = <ls_dblog>
