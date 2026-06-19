@@ -222,8 +222,7 @@ CLASS lcl_report IMPLEMENTATION.
            END OF ty_usr01_bname.
     DATA: lt_users   TYPE STANDARD TABLE OF ty_usr01_bname WITH DEFAULT KEY,
           lt_dblog   TYPE tt_dbtablog,
-          rt_logkey  TYPE RANGE OF dbtablog-logkey,
-          lv_use_key TYPE abap_bool VALUE abap_false.
+          rt_logkey  TYPE RANGE OF dbtablog-logkey.
 
     IF s_bname IS NOT INITIAL.
       SELECT bname FROM usr01
@@ -236,38 +235,28 @@ CLASS lcl_report IMPLEMENTATION.
             option = 'CP'
             low    = |{ sy-mandt }{ ls_user-bname }*| ) TO rt_logkey.
         ENDLOOP.
-        lv_use_key = abap_true.
+      ELSE.
+        " Avoid full-table scan if users were specified but not found
+        APPEND VALUE #(
+          sign   = 'I'
+          option = 'EQ'
+          low    = 'DUMMY_NO_USER_FOUND' ) TO rt_logkey.
       ENDIF.
     ENDIF.
 
     " Retrieve logs matching criteria with modern, fast selection
-    IF lv_use_key = abap_true.
-      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-        FROM dbtablog
-        WHERE tabname  = 'USR05'
-          AND logdate  BETWEEN @dbeg AND @dend
-          AND logkey   IN @rt_logkey
-          AND username IN @s_usera
-          AND tcode    IN @s_tcode
-          AND optype   IN @s_optype
-        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
-      IF sy-subrc <> 0.
-        " check sy-subrc for linter
-      ENDIF.
-    ELSE.
-      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-        FROM dbtablog
-        WHERE tabname  = 'USR05'
-          AND logdate  BETWEEN @dbeg AND @dend
-          AND username IN @s_usera
-          AND tcode    IN @s_tcode
-          AND optype   IN @s_optype
-        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
-      IF sy-subrc <> 0.
-        " check sy-subrc for linter
-      ENDIF.
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+      FROM dbtablog
+      WHERE tabname  = 'USR05'
+        AND logdate  BETWEEN @dbeg AND @dend
+        AND logkey   IN @rt_logkey
+        AND username IN @s_usera
+        AND tcode    IN @s_tcode
+        AND optype   IN @s_optype
+      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+    IF sy-subrc <> 0.
+      " check sy-subrc for linter
     ENDIF.
 
     LOOP AT lt_dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
@@ -369,25 +358,23 @@ CLASS lcl_report IMPLEMENTATION.
 
     DATA: lt_next_logs TYPE tt_dbtablog.
 
-    " 2. Try next entry in database
+    " 2. Try next entry in database (retrieve strictly newer changes, up to 1 row)
     SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
+      UP TO 1 ROWS
       WHERE tabname = @is_dbtablog-tabname
-        AND logdate >= @is_dbtablog-logdate
         AND logkey  = @is_dbtablog-logkey
+        AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
       ORDER BY logdate ASCENDING, logtime ASCENDING
       INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs.
-    IF sy-subrc <> 0.
-      " check sy-subrc for linter
-    ENDIF.
-
-    LOOP AT lt_next_logs INTO DATA(ls_next_log).
-      IF ls_next_log-logdate > is_dbtablog-logdate.
+    IF sy-subrc = 0.
+      READ TABLE lt_next_logs INTO DATA(ls_next_log) INDEX 1.
+      IF sy-subrc = 0.
         DATA(ls_decoded_db) = lcl_usr05_log_decoder=>decode_log( ls_next_log ).
         rv_parva = ls_decoded_db-parva.
         RETURN.
       ENDIF.
-    ENDLOOP.
+    ENDIF.
 
     " 3. Fallback: use actual database table entry (filtering on both keys bname and parid)
     SELECT SINGLE parva FROM usr05
