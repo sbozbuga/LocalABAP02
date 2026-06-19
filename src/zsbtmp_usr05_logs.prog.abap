@@ -178,7 +178,7 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_dblog TYPE tt_dbtablog.
 
     " Retrieve logs matching criteria with modern, fast selection
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, loglen, logdata, versno
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
       WHERE tabname  = 'USR05'
         AND logdate  BETWEEN @dbeg AND @dend
@@ -281,7 +281,7 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_next_logs TYPE tt_dbtablog.
 
     " 2. Try next entry in database
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, loglen, logdata, versno
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logdate >= @is_dbtablog-logdate
@@ -326,14 +326,15 @@ CLASS lcl_report IMPLEMENTATION.
 
         " Modernize column texts
         TRY.
-            DATA(lo_col) = lo_cols->get_column( 'ICON' ).
-            lo_col->set_icon( abap_true ).
-            lo_col->set_medium_text( 'Change Type' ).
+            DATA: lo_col_table TYPE REF TO cl_salv_column_table.
+            lo_col_table ?= lo_cols->get_column( 'ICON' ).
+            lo_col_table->set_icon( abap_true ).
+            lo_col_table->set_medium_text( 'Change Type' ).
           CATCH cx_salv_not_found.
         ENDTRY.
 
         lo_alv->display( ).
-      CATCH cx_salv_msg.
+      CATCH cx_salv_error.
         MESSAGE 'Error initializing ALV Display' TYPE 'E'.
     ENDTRY.
   ENDMETHOD.
