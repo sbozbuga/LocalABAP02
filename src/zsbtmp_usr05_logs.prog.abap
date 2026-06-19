@@ -58,8 +58,8 @@ CLASS lcl_report DEFINITION FINAL.
   PUBLIC SECTION.
     TYPES: BEGIN OF txw_cd_usr05,
              bname TYPE usr05-bname.
-             INCLUDE STRUCTURE txw_cd_dbtablog.
-             INCLUDE STRUCTURE txw_cd_gen.
+             INCLUDE TYPE txw_cd_dbtablog.
+             INCLUDE TYPE txw_cd_gen.
     TYPES: END OF txw_cd_usr05,
            BEGIN OF ty_output.
              INCLUDE TYPE txw_cd_usr05.
