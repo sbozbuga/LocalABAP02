@@ -214,18 +214,25 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_data.
-    DATA: lt_dblog   TYPE tt_dbtablog,
+    TYPES: BEGIN OF ty_usr01_bname,
+             bname TYPE usr01-bname,
+           END OF ty_usr01_bname.
+    DATA: lt_users   TYPE STANDARD TABLE OF ty_usr01_bname WITH DEFAULT KEY,
+          lt_dblog   TYPE tt_dbtablog,
           rt_logkey  TYPE RANGE OF dbtablog-logkey,
           lv_use_key TYPE abap_bool VALUE abap_false.
 
     IF s_bname IS NOT INITIAL.
-      LOOP AT s_bname INTO DATA(ls_bname) WHERE option = 'EQ' OR option = 'CP'.
-        APPEND VALUE #(
-          sign   = ls_bname-sign
-          option = 'CP'
-          low    = |{ sy-mandt }{ ls_bname-low }*| ) TO rt_logkey.
-      ENDLOOP.
-      IF rt_logkey IS NOT INITIAL.
+      SELECT bname FROM usr01
+        WHERE bname IN @s_bname
+        INTO CORRESPONDING FIELDS OF TABLE @lt_users.
+      IF sy-subrc = 0.
+        LOOP AT lt_users INTO DATA(ls_user).
+          APPEND VALUE #(
+            sign   = 'I'
+            option = 'CP'
+            low    = |{ sy-mandt }{ ls_user-bname }*| ) TO rt_logkey.
+        ENDLOOP.
         lv_use_key = abap_true.
       ENDIF.
     ENDIF.
