@@ -364,6 +364,28 @@ CLASS lcl_report IMPLEMENTATION.
         " Enable premium color handling
         lo_cols->set_color_column( 'COLOR' ).
 
+        " Hide unneeded columns
+        DATA: lt_hide TYPE STANDARD TABLE OF salv_de_column WITH DEFAULT KEY.
+        lt_hide = VALUE #( ( 'MANDT' )
+                           ( 'TABNAME' )
+                           ( 'TABKEY' )
+                           ( 'FNAME' )
+                           ( 'FTEXT' )
+                           ( 'OUTLEN' )
+                           ( 'VERSNO' )
+                           ( 'COLOR' )
+                           ( 'LOGID' )
+                           ( 'PROGNAME' )
+                           ( 'BNAME' )
+                           ( 'CHANGENR' )
+                           ( 'CHNGIND' ) ).
+        LOOP AT lt_hide INTO DATA(lv_col).
+          TRY.
+              lo_cols->get_column( lv_col )->set_visible( abap_false ).
+            CATCH cx_salv_not_found.
+          ENDTRY.
+        ENDLOOP.
+
         " Modernize column texts
         TRY.
             DATA: lo_col_table TYPE REF TO cl_salv_column_table.
@@ -372,6 +394,9 @@ CLASS lcl_report IMPLEMENTATION.
             lo_col_table->set_medium_text( 'Change Type' ).
           CATCH cx_salv_not_found.
         ENDTRY.
+
+        " Enable standard toolbar functions
+        lo_alv->get_functions( )->set_all( abap_true ).
 
         lo_alv->display( ).
       CATCH cx_salv_error.

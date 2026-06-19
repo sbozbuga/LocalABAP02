@@ -559,7 +559,8 @@ CLASS lcl_report IMPLEMENTATION.
                        ( 'LOGID' )
                        ( 'PROGNAME' )
                        ( 'BNAME' )
-                       ( 'CHANGENR' ) ).
+                       ( 'CHANGENR' )
+                       ( 'CHNGIND' ) ).
     LOOP AT lt_hide INTO DATA(lv_col).
       TRY.
           lo_cols->get_column( lv_col )->set_visible( abap_false ).
