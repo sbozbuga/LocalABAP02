@@ -142,11 +142,12 @@ CLASS lcl_report DEFINITION FINAL.
 
   PRIVATE SECTION.
     CLASS-DATA:
-      mt_all_logs TYPE STANDARD TABLE OF ty_output,
-      mt_grid_log TYPE STANDARD TABLE OF ty_output,
-      mt_node_map TYPE STANDARD TABLE OF ty_node_map,
-      go_alv       TYPE REF TO cl_salv_table,
-      go_tree      TYPE REF TO cl_salv_tree.
+      mt_all_logs   TYPE STANDARD TABLE OF ty_output,
+      mt_grid_log   TYPE STANDARD TABLE OF ty_output,
+      mt_node_map   TYPE STANDARD TABLE OF ty_node_map,
+      mt_empty_tree TYPE STANDARD TABLE OF ty_tree_dummy,
+      go_alv        TYPE REF TO cl_salv_table,
+      go_tree       TYPE REF TO cl_salv_tree.
 
     CLASS-METHODS:
       get_data,
@@ -384,7 +385,6 @@ CLASS lcl_report IMPLEMENTATION.
     lo_container_right = lo_splitter->get_container( row = 1 column = 2 ).
 
     " Create Tree on the left container
-    DATA: lt_empty_tree TYPE STANDARD TABLE OF ty_tree_dummy.
     TRY.
         cl_salv_tree=>factory(
           EXPORTING
@@ -392,7 +392,7 @@ CLASS lcl_report IMPLEMENTATION.
           IMPORTING
             r_salv_tree = go_tree
           CHANGING
-            t_table     = lt_empty_tree ).
+            t_table     = mt_empty_tree ).
 
         " Show all records initially in the right grid
         mt_grid_log = mt_all_logs.
