@@ -34,6 +34,9 @@ SELECT-OPTIONS: s_usera  FOR gv_usera,
 PARAMETERS p_real AS CHECKBOX DEFAULT abap_true.
 SELECTION-SCREEN END OF BLOCK b02.
 
+INITIALIZATION.
+  dbeg = sy-datum - 10.
+
 *---------------------------------------------------------------------*
 * LCL_USR05_LOG_DECODER
 *---------------------------------------------------------------------*
