@@ -425,13 +425,15 @@ CLASS lcl_report IMPLEMENTATION.
           lv_node_idx   TYPE i VALUE 0.
 
     " Root-Node
+    DATA(lv_total_count) = lines( mt_all_logs ).
+
     APPEND VALUE #( node_key  = 'ROOT'
                     relatship = cl_gui_simple_tree=>relat_last_child
                     isfolder  = abap_true
                     n_image   = icon_folder
                     exp_image = icon_open_folder
                     style     = cl_gui_simple_tree=>style_default
-                    text      = 'User Parameter Changes' ) TO it_nodes.
+                    text      = |User Parameter Changes ({ lv_total_count })| ) TO it_nodes.
 
     LOOP AT mt_all_logs ASSIGNING FIELD-SYMBOL(<ls_log>).
       IF <ls_log>-bname <> lv_prev_bname.
@@ -441,6 +443,11 @@ CLASS lcl_report IMPLEMENTATION.
         lv_node_idx = lv_node_idx + 1.
         lv_bname_key = |N{ lv_node_idx }|.
 
+        DATA(lv_user_count) = 0.
+        LOOP AT mt_all_logs TRANSPORTING NO FIELDS WHERE bname = lv_prev_bname.
+          lv_user_count = lv_user_count + 1.
+        ENDLOOP.
+
         APPEND VALUE #( node_key  = lv_bname_key
                         relatship = cl_gui_simple_tree=>relat_last_child
                         relatkey  = 'ROOT'
@@ -448,7 +455,7 @@ CLASS lcl_report IMPLEMENTATION.
                         n_image   = icon_folder
                         exp_image = icon_open_folder
                         style     = cl_gui_simple_tree=>style_intensified
-                        text      = |User: { lv_prev_bname }| ) TO it_nodes.
+                        text      = |User: { lv_prev_bname } ({ lv_user_count })| ) TO it_nodes.
 
         APPEND VALUE #( node_key = lv_bname_key
                         bname    = lv_prev_bname ) TO mt_node_map.
@@ -460,12 +467,17 @@ CLASS lcl_report IMPLEMENTATION.
         lv_node_idx = lv_node_idx + 1.
         lv_parid_key = |N{ lv_node_idx }|.
 
+        DATA(lv_param_count) = 0.
+        LOOP AT mt_all_logs TRANSPORTING NO FIELDS WHERE bname = lv_prev_bname AND parid = lv_prev_parid.
+          lv_param_count = lv_param_count + 1.
+        ENDLOOP.
+
         APPEND VALUE #( node_key  = lv_parid_key
                         relatship = cl_gui_simple_tree=>relat_last_child
                         relatkey  = lv_bname_key
                         isfolder  = abap_false
                         style     = cl_gui_simple_tree=>style_default
-                        text      = |Parameter: { lv_prev_parid }| ) TO it_nodes.
+                        text      = |Parameter: { lv_prev_parid } ({ lv_param_count })| ) TO it_nodes.
 
         APPEND VALUE #( node_key = lv_parid_key
                         bname    = lv_prev_bname
@@ -479,8 +491,11 @@ CLASS lcl_report IMPLEMENTATION.
         table_structure_name = 'MTREESNODE'
         node_table           = it_nodes ).
 
-    " Expand root node
-    go_tree->expand_root_nodes( ).
+    " Expand entire tree recursively starting from root node
+    go_tree->expand_node(
+      EXPORTING
+        node_key       = 'ROOT'
+        expand_subtree = abap_true ).
   ENDMETHOD.
 
   METHOD setup_alv_grid.
