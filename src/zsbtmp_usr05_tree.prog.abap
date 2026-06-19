@@ -477,7 +477,7 @@ CLASS lcl_report IMPLEMENTATION.
                         relatkey  = lv_bname_key
                         isfolder  = abap_false
                         style     = cl_gui_simple_tree=>style_default
-                        text      = |Parameter: { lv_prev_parid } ({ lv_param_count })| ) TO it_nodes.
+                        text      = |{ lv_prev_parid } ({ lv_param_count })| ) TO it_nodes.
 
         APPEND VALUE #( node_key = lv_parid_key
                         bname    = lv_prev_bname
@@ -511,7 +511,17 @@ CLASS lcl_report IMPLEMENTATION.
 
     " Hide unneeded columns
     DATA: lt_hide TYPE STANDARD TABLE OF salv_de_column WITH DEFAULT KEY.
-    lt_hide = VALUE #( ( 'MANDT' ) ( 'TABNAME' ) ( 'TABKEY' ) ( 'FNAME' ) ( 'FTEXT' ) ( 'OUTLEN' ) ( 'VERSNO' ) ( 'COLOR' ) ).
+    lt_hide = VALUE #( ( 'MANDT' )
+                       ( 'TABNAME' )
+                       ( 'TABKEY' )
+                       ( 'FNAME' )
+                       ( 'FTEXT' )
+                       ( 'OUTLEN' )
+                       ( 'VERSNO' )
+                       ( 'COLOR' )
+                       ( 'LOGID' )
+                       ( 'PROGNAME' )
+                       ( 'BNAME' ) ).
     LOOP AT lt_hide INTO DATA(lv_col).
       TRY.
           lo_cols->get_column( lv_col )->set_visible( abap_false ).
