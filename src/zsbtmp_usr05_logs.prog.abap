@@ -167,17 +167,18 @@ ENDCLASS.
 CLASS lcl_report IMPLEMENTATION.
 
   METHOD run.
-    go_instance = NEW #( ).
-    go_instance->get_data( ).
-    go_instance->display_alv( ).
+    get_data( ).
+    display_alv( ).
   ENDMETHOD.
 
   METHOD get_data.
     " Format query pattern safely
     DATA(lv_key) = |{ sy-mandt }{ VALUE #( s_bname[ 1 ]-low OPTIONAL ) }%|.
 
+    DATA: lt_dblog TYPE tt_dbtablog.
+
     " Retrieve logs matching criteria with modern, fast selection
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, logdata, versno
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, loglen, logdata, versno
       FROM dbtablog
       WHERE tabname  = 'USR05'
         AND logdate  BETWEEN @dbeg AND @dend
@@ -186,7 +187,7 @@ CLASS lcl_report IMPLEMENTATION.
         AND tcode    IN @s_tcode
         AND optype   IN @s_optype
       ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-      INTO TABLE @DATA(lt_dblog).
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
     IF sy-subrc <> 0.
       " check sy-subrc for linter
     ENDIF.
@@ -277,14 +278,16 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    DATA: lt_next_logs TYPE tt_dbtablog.
+
     " 2. Try next entry in database
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, logdata, versno
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, loglen, logdata, versno
       FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logdate >= @is_dbtablog-logdate
         AND logkey  = @is_dbtablog-logkey
       ORDER BY logdate ASCENDING, logtime ASCENDING
-      INTO TABLE @DATA(lt_next_logs).
+      INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs.
     IF sy-subrc <> 0.
       " check sy-subrc for linter
     ENDIF.
