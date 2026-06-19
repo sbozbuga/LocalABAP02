@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*& Report ZSBTMP_USR05_LOGS
+*& Report ZSBTMP_USR05_LOGS - USR05 Change Logs Reader
 *&---------------------------------------------------------------------*
 *& Modernized & Consolidated DBTABLOG Reader for USR05 changes
 *& Optimized Static Version (Zero Dynamic DDIC Calls)

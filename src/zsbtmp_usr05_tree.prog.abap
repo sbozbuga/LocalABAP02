@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*& Report ZSBTMP_USR05_TREE
+*& Report ZSBTMP_USR05_TREE - USR05 Change Logs Explorer
 *&---------------------------------------------------------------------*
 *& ALV Tree and Grid Split-Screen Display for USR05 Change Logs
 *& Optimized Static Version (Zero Dynamic DDIC Calls)
