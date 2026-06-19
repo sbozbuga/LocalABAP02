@@ -364,8 +364,8 @@ CLASS lcl_report IMPLEMENTATION.
 
     CREATE OBJECT lo_dock
       EXPORTING
-        repid     = sy-repid
-        dynnr     = sy-dynnr
+        repid     = 'SAPMSSY0'
+        dynnr     = '0120'
         side      = cl_gui_docking_container=>dock_at_left
         extension = 99999.
 
