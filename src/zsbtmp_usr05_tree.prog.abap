@@ -155,6 +155,7 @@ CLASS lcl_report DEFINITION FINAL.
     CLASS-METHODS:
       get_data,
       display_split_screen,
+      display_batch,
       build_tree,
       setup_alv_grid,
       process_log_entry
@@ -213,7 +214,11 @@ CLASS lcl_report IMPLEMENTATION.
 
   METHOD run.
     get_data( ).
-    display_split_screen( ).
+    IF sy-batch = abap_true.
+      display_batch( ).
+    ELSE.
+      display_split_screen( ).
+    ENDIF.
   ENDMETHOD.
 
   METHOD get_data.
@@ -438,6 +443,23 @@ CLASS lcl_report IMPLEMENTATION.
         build_tree( ).
         setup_alv_grid( ).
 
+        go_alv->display( ).
+      CATCH cx_root INTO DATA(lo_err).
+        MESSAGE lo_err->get_text( ) TYPE 'E'.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD display_batch.
+    TRY.
+        cl_salv_table=>factory(
+          EXPORTING
+            list_display = abap_true
+          IMPORTING
+            r_salv_table = go_alv
+          CHANGING
+            t_table      = mt_all_logs ).
+
+        setup_alv_grid( ).
         go_alv->display( ).
       CATCH cx_root INTO DATA(lo_err).
         MESSAGE lo_err->get_text( ) TYPE 'E'.
