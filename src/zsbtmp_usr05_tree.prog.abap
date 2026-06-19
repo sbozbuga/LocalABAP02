@@ -384,7 +384,8 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_empty_tree TYPE STANDARD TABLE OF ty_output.
     TRY.
         cl_salv_tree=>factory(
-          r_container  = lo_container_left
+          EXPORTING
+            r_container = lo_container_left
           IMPORTING
             r_salv_tree = go_tree
           CHANGING
@@ -395,7 +396,8 @@ CLASS lcl_report IMPLEMENTATION.
 
         " Create Grid on the right container
         cl_salv_table=>factory(
-          r_container  = lo_container_right
+          EXPORTING
+            r_container  = lo_container_right
           IMPORTING
             r_salv_table = go_alv
           CHANGING
@@ -475,8 +477,8 @@ CLASS lcl_report IMPLEMENTATION.
     ENDTRY.
 
     " Hide unneeded columns
-    DATA: lt_hide TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
-    lt_hide = VALUE #( ( `MANDT` ) ( `TABNAME` ) ( `TABKEY` ) ( `FNAME` ) ( `FTEXT` ) ( `OUTLEN` ) ( `VERSNO` ) ( `COLOR` ) ).
+    DATA: lt_hide TYPE STANDARD TABLE OF salv_de_column WITH DEFAULT KEY.
+    lt_hide = VALUE #( ( 'MANDT' ) ( 'TABNAME' ) ( 'TABKEY' ) ( 'FNAME' ) ( 'FTEXT' ) ( 'OUTLEN' ) ( 'VERSNO' ) ( 'COLOR' ) ).
     LOOP AT lt_hide INTO DATA(lv_col).
       TRY.
           lo_cols->get_column( lv_col )->set_visible( abap_false ).
@@ -498,17 +500,19 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD refresh_grid.
+    DATA: ls_log TYPE ty_output.
+
     READ TABLE mt_node_map INTO DATA(ls_map) WITH KEY node_key = id_node_key.
     IF sy-subrc = 0.
       CLEAR mt_grid_log.
       IF ls_map-parid IS INITIAL.
         " User node clicked -> show all parameters for this user
-        LOOP AT mt_all_logs INTO DATA(ls_log) WHERE bname = ls_map-bname.
+        LOOP AT mt_all_logs INTO ls_log WHERE bname = ls_map-bname.
           APPEND ls_log TO mt_grid_log.
         ENDLOOP.
       ELSE.
         " Parameter node clicked -> show logs of this parameter for this user
-        LOOP AT mt_all_logs INTO DATA(ls_log) WHERE bname = ls_map-bname AND parid = ls_map-parid.
+        LOOP AT mt_all_logs INTO ls_log WHERE bname = ls_map-bname AND parid = ls_map-parid.
           APPEND ls_log TO mt_grid_log.
         ENDLOOP.
       ENDIF.
