@@ -8,6 +8,9 @@ REPORT zsbtmp_usr05_tree.
 
 TYPE-POOLS: icon.
 
+TYPES: ty_it_events TYPE STANDARD TABLE OF cntl_simple_event WITH DEFAULT KEY,
+       ty_it_nodes  TYPE STANDARD TABLE OF mtreesnode WITH DEFAULT KEY.
+
 *---------------------------------------------------------------------*
 * SELECTION SCREEN
 *---------------------------------------------------------------------*
@@ -129,10 +132,7 @@ CLASS lcl_report DEFINITION FINAL.
              node_key TYPE salv_de_node_key,
              bname    TYPE usr05-bname,
              parid    TYPE usr05-parid,
-           END OF ty_node_map,
-           BEGIN OF ty_tree_dummy,
-             dummy TYPE c LENGTH 1,
-           END OF ty_tree_dummy.
+           END OF ty_node_map.
 
     CLASS-METHODS:
       run,
@@ -142,12 +142,12 @@ CLASS lcl_report DEFINITION FINAL.
 
   PRIVATE SECTION.
     CLASS-DATA:
-      mt_all_logs   TYPE STANDARD TABLE OF ty_output,
-      mt_grid_log   TYPE STANDARD TABLE OF ty_output,
-      mt_node_map   TYPE STANDARD TABLE OF ty_node_map,
-      mt_empty_tree TYPE STANDARD TABLE OF ty_tree_dummy,
-      go_alv        TYPE REF TO cl_salv_table,
-      go_tree       TYPE REF TO cl_salv_tree.
+      mt_all_logs TYPE STANDARD TABLE OF ty_output,
+      mt_grid_log TYPE STANDARD TABLE OF ty_output,
+      mt_node_map TYPE STANDARD TABLE OF ty_node_map,
+      it_nodes    TYPE ty_it_nodes,
+      go_alv      TYPE REF TO cl_salv_table,
+      go_tree     TYPE REF TO cl_gui_simple_tree.
 
     CLASS-METHODS:
       get_data,
@@ -178,27 +178,27 @@ ENDCLASS.
 *---------------------------------------------------------------------*
 CLASS lcl_event_handler DEFINITION FINAL.
   PUBLIC SECTION.
-    METHODS:
-      on_double_click FOR EVENT double_click OF cl_salv_events_tree
+    CLASS-METHODS:
+      on_selection_changed FOR EVENT selection_changed OF cl_gui_simple_tree
         IMPORTING
           node_key
-          columnname.
+          sender.
 ENDCLASS.
 
 *---------------------------------------------------------------------*
 * START-OF-SELECTION
 *---------------------------------------------------------------------*
 START-OF-SELECTION.
-  WRITE: / 'Loading USR05 Change Tree...'.
   lcl_report=>run( ).
+  cl_abap_list_layout=>suppress_toolbar( ).
+  WRITE space.
 
 *---------------------------------------------------------------------*
 * LCL_EVENT_HANDLER IMPLEMENTATION
 *---------------------------------------------------------------------*
 CLASS lcl_event_handler IMPLEMENTATION.
-  METHOD on_double_click.
-    " Unused parameter columnname
-    DATA(lv_col) = columnname.
+  METHOD on_selection_changed.
+    DATA(lo_sender) = sender.
     lcl_report=>refresh_grid( node_key ).
   ENDMETHOD.
 ENDCLASS.
@@ -360,39 +360,41 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD display_split_screen.
-    DATA: lo_dock            TYPE REF TO cl_gui_docking_container,
-          lo_splitter        TYPE REF TO cl_gui_splitter_container,
-          lo_container_left  TYPE REF TO cl_gui_container,
-          lo_container_right TYPE REF TO cl_gui_container,
-          lo_event_handler   TYPE REF TO lcl_event_handler.
+    DATA: lo_split     TYPE REF TO cl_gui_splitter_container,
+          lo_spl_left  TYPE REF TO cl_gui_container,
+          lo_spl_right TYPE REF TO cl_gui_container,
+          it_events    TYPE ty_it_events.
 
-    CREATE OBJECT lo_dock
+    " Create Splitter on screen0 (forces render on standard list screen)
+    CREATE OBJECT lo_split
       EXPORTING
-        repid     = 'SAPMSSY0'
-        dynnr     = '0120'
-        side      = cl_gui_docking_container=>dock_at_left
-        extension = 99999.
+        parent                  = cl_gui_container=>screen0
+        no_autodef_progid_dynnr = abap_true
+        rows                    = 1
+        columns                 = 2.
 
-    CREATE OBJECT lo_splitter
+    lo_split->set_column_width(
       EXPORTING
-        parent  = lo_dock
-        rows    = 1
-        columns = 2.
+        id    = 1
+        width = 25 ).
 
-    lo_splitter->set_column_width( id = 1 width = 30 ).
+    lo_spl_left  = lo_split->get_container( row = 1 column = 1 ).
+    lo_spl_right = lo_split->get_container( row = 1 column = 2 ).
 
-    lo_container_left  = lo_splitter->get_container( row = 1 column = 1 ).
-    lo_container_right = lo_splitter->get_container( row = 1 column = 2 ).
-
-    " Create Tree on the left container
     TRY.
-        cl_salv_tree=>factory(
+        " Create Tree on the left container
+        CREATE OBJECT go_tree
           EXPORTING
-            r_container = lo_container_left
-          IMPORTING
-            r_salv_tree = go_tree
-          CHANGING
-            t_table     = mt_empty_tree ).
+            parent              = lo_spl_left
+            node_selection_mode = cl_gui_simple_tree=>node_sel_mode_single.
+
+        " Register selection_changed event
+        APPEND VALUE #( eventid    = cl_gui_simple_tree=>eventid_selection_changed
+                        appl_event = abap_true ) TO it_events.
+        go_tree->set_registered_events( events = it_events ).
+
+        " Set event handler
+        SET HANDLER lcl_event_handler=>on_selection_changed FOR go_tree.
 
         " Show all records initially in the right grid
         mt_grid_log = mt_all_logs.
@@ -400,7 +402,7 @@ CLASS lcl_report IMPLEMENTATION.
         " Create Grid on the right container
         cl_salv_table=>factory(
           EXPORTING
-            r_container  = lo_container_right
+            r_container  = lo_spl_right
           IMPORTING
             r_salv_table = go_alv
           CHANGING
@@ -409,69 +411,76 @@ CLASS lcl_report IMPLEMENTATION.
         build_tree( ).
         setup_alv_grid( ).
 
-        " Register Event Handler
-        CREATE OBJECT lo_event_handler.
-        SET HANDLER lo_event_handler->on_double_click FOR go_tree->get_event( ).
-
         go_alv->display( ).
-        go_tree->display( ).
-      CATCH cx_salv_error.
-        MESSAGE 'Error initializing ALV Controls' TYPE 'E'.
+      CATCH cx_root INTO DATA(lo_err).
+        MESSAGE lo_err->get_text( ) TYPE 'E'.
     ENDTRY.
   ENDMETHOD.
 
   METHOD build_tree.
-    DATA: lo_nodes      TYPE REF TO cl_salv_nodes,
-          lv_prev_bname TYPE usr05-bname,
+    DATA: lv_prev_bname TYPE usr05-bname,
           lv_prev_parid TYPE usr05-parid,
           lv_bname_key  TYPE salv_de_node_key,
-          lv_parid_key  TYPE salv_de_node_key.
+          lv_parid_key  TYPE salv_de_node_key,
+          lv_node_idx   TYPE i VALUE 0.
 
-    lo_nodes = go_tree->get_nodes( ).
-
-    " Configure tree hierarchy header
-    DATA: lo_settings TYPE REF TO cl_salv_tree_settings.
-    lo_settings = go_tree->get_tree_settings( ).
-    lo_settings->set_hierarchy_header( 'User / Parameter' ).
-
-    " Hide the dummy column to only show the tree hierarchy column
-    TRY.
-        go_tree->get_columns( )->get_column( 'DUMMY' )->set_visible( abap_false ).
-      CATCH cx_salv_not_found.
-    ENDTRY.
+    " Root-Node
+    APPEND VALUE #( node_key  = 'ROOT'
+                    relatship = cl_gui_simple_tree=>relat_last_child
+                    isfolder  = abap_true
+                    n_image   = icon_folder
+                    exp_image = icon_open_folder
+                    style     = cl_gui_simple_tree=>style_default
+                    text      = 'User Parameter Changes' ) TO it_nodes.
 
     LOOP AT mt_all_logs ASSIGNING FIELD-SYMBOL(<ls_log>).
       IF <ls_log>-bname <> lv_prev_bname.
         lv_prev_bname = <ls_log>-bname.
         CLEAR lv_prev_parid.
 
-        TRY.
-            DATA(lo_bname_node) = lo_nodes->add_node(
-              related_node = ''
-              relationship = if_salv_c_node_relation=>parent
-              text         = |User: { lv_prev_bname }|
-              folder       = abap_true ).
-            lv_bname_key = lo_bname_node->get_key( ).
-            APPEND VALUE #( node_key = lv_bname_key bname = lv_prev_bname ) TO mt_node_map.
-          CATCH cx_salv_error.
-        ENDTRY.
+        lv_node_idx = lv_node_idx + 1.
+        lv_bname_key = |N{ lv_node_idx }|.
+
+        APPEND VALUE #( node_key  = lv_bname_key
+                        relatship = cl_gui_simple_tree=>relat_last_child
+                        relatkey  = 'ROOT'
+                        isfolder  = abap_true
+                        n_image   = icon_folder
+                        exp_image = icon_open_folder
+                        style     = cl_gui_simple_tree=>style_intensified
+                        text      = |User: { lv_prev_bname }| ) TO it_nodes.
+
+        APPEND VALUE #( node_key = lv_bname_key
+                        bname    = lv_prev_bname ) TO mt_node_map.
       ENDIF.
 
       IF <ls_log>-parid <> lv_prev_parid.
         lv_prev_parid = <ls_log>-parid.
 
-        TRY.
-            DATA(lo_parid_node) = lo_nodes->add_node(
-              related_node = lv_bname_key
-              relationship = if_salv_c_node_relation=>last_child
-              text         = |Parameter: { lv_prev_parid }|
-              folder       = abap_true ).
-            lv_parid_key = lo_parid_node->get_key( ).
-            APPEND VALUE #( node_key = lv_parid_key bname = lv_prev_bname parid = lv_prev_parid ) TO mt_node_map.
-          CATCH cx_salv_error.
-        ENDTRY.
+        lv_node_idx = lv_node_idx + 1.
+        lv_parid_key = |N{ lv_node_idx }|.
+
+        APPEND VALUE #( node_key  = lv_parid_key
+                        relatship = cl_gui_simple_tree=>relat_last_child
+                        relatkey  = lv_bname_key
+                        isfolder  = abap_false
+                        style     = cl_gui_simple_tree=>style_default
+                        text      = |Parameter: { lv_prev_parid }| ) TO it_nodes.
+
+        APPEND VALUE #( node_key = lv_parid_key
+                        bname    = lv_prev_bname
+                        parid    = lv_prev_parid ) TO mt_node_map.
       ENDIF.
     ENDLOOP.
+
+    " Add nodes to simple tree
+    go_tree->add_nodes(
+      EXPORTING
+        table_structure_name = 'MTREESNODE'
+        node_table           = it_nodes ).
+
+    " Expand root node
+    go_tree->expand_root_nodes( ).
   ENDMETHOD.
 
   METHOD setup_alv_grid.
