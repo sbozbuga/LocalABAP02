@@ -2,12 +2,11 @@
   "$schema": "https://cdn.jsdelivr.net/npm/abaplint@latest/schema.json",
 
   "global": {
-    "abapVersion": "v750",
-    "ignoreSyntaxErrors": false
+    "files": "/src/**/*"
   },
 
   "syntax": {
-    "version": "Standard",
+    "version": "v750",
     "errorNamespace": "^(\\/[Cc][Tt][Dd][Ii]\\/|Z|Y|LCL_|TY_|LIF_)"
   },
 
