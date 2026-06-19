@@ -13,7 +13,7 @@ TYPE-POOLS: icon.
 *---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
 DATA: gv_bname TYPE usr05-bname.
-SELECT-OPTIONS s_bname FOR gv_bname NO INTERVALS.
+SELECT-OPTIONS s_bname FOR gv_bname NO INTERVALS MATCHCODE OBJECT user_logon.
 SELECTION-SCREEN END OF BLOCK b01.
 
 SELECTION-SCREEN BEGIN OF BLOCK interv WITH FRAME TITLE TEXT-001.
