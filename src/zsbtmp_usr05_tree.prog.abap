@@ -361,12 +361,12 @@ CLASS lcl_report IMPLEMENTATION.
     " 2. Try next entry in database (retrieve strictly newer changes, up to 1 row)
     SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
-      UP TO 1 ROWS
       WHERE tabname = @is_dbtablog-tabname
         AND logkey  = @is_dbtablog-logkey
         AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
       ORDER BY logdate ASCENDING, logtime ASCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs.
+      INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs
+      UP TO 1 ROWS.
     IF sy-subrc = 0.
       READ TABLE lt_next_logs INTO DATA(ls_next_log) INDEX 1.
       IF sy-subrc = 0.
