@@ -129,7 +129,10 @@ CLASS lcl_report DEFINITION FINAL.
              node_key TYPE salv_de_node_key,
              bname    TYPE usr05-bname,
              parid    TYPE usr05-parid,
-           END OF ty_node_map.
+           END OF ty_node_map,
+           BEGIN OF ty_tree_dummy,
+             dummy TYPE c LENGTH 1,
+           END OF ty_tree_dummy.
 
     CLASS-METHODS:
       run,
@@ -381,7 +384,7 @@ CLASS lcl_report IMPLEMENTATION.
     lo_container_right = lo_splitter->get_container( row = 1 column = 2 ).
 
     " Create Tree on the left container
-    DATA: lt_empty_tree TYPE STANDARD TABLE OF ty_output.
+    DATA: lt_empty_tree TYPE STANDARD TABLE OF ty_tree_dummy.
     TRY.
         cl_salv_tree=>factory(
           EXPORTING
@@ -430,6 +433,12 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lo_settings TYPE REF TO cl_salv_tree_settings.
     lo_settings = go_tree->get_tree_settings( ).
     lo_settings->set_hierarchy_header( 'User / Parameter' ).
+
+    " Hide the dummy column to only show the tree hierarchy column
+    TRY.
+        go_tree->get_columns( )->get_column( 'DUMMY' )->set_visible( abap_false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
 
     LOOP AT mt_all_logs ASSIGNING FIELD-SYMBOL(<ls_log>).
       IF <ls_log>-bname <> lv_prev_bname.
