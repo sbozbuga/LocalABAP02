@@ -158,6 +158,9 @@ CLASS lcl_usr05 IMPLEMENTATION.
 
     DATA:
       lv_parva        TYPE xuvalue,
+      "--- Begin of Change 2026-06-24: Flag to track first update (prevents empty values resetting state)
+      lv_first        TYPE abap_bool,
+      "--- End of Change 2026-06-24
       lt_usr05_change TYPE tyt_usr05_change.
 
     FIELD-SYMBOLS:
@@ -187,11 +190,15 @@ CLASS lcl_usr05 IMPLEMENTATION.
 
     "pro Benutzer und PArameter verarbeiten
     LOOP AT lt_usr05_change ASSIGNING <ls_usr05_change_l>.
+      "--- Begin of Change 2026-06-24: Reset tracking flag for current group
+      lv_first = abap_true.
+      "--- End of Change 2026-06-24
       CLEAR: lv_parva.
       LOOP AT gt_usr05_change ASSIGNING <ls_usr05_change> WHERE bname = <ls_usr05_change_l>-bname
                                                             AND parid = <ls_usr05_change_l>-parid.
         IF <ls_usr05_change>-optype = 'U'.
-          IF lv_parva IS INITIAL.
+          "--- Begin of Change 2026-06-24: Check loop sequence flag instead of initial value check
+          IF lv_first = abap_true.
             "erstes Mal; dann aktuellen Wert holen; ist neuester Wert
             READ TABLE gt_usrpar ASSIGNING <ls_usrpar> WITH TABLE KEY bname = <ls_usr05_change>-bname
                                                                       parid = <ls_usr05_change>-parid.
@@ -200,6 +207,7 @@ CLASS lcl_usr05 IMPLEMENTATION.
               <ls_usr05_change>-parva_new = <ls_usrpar>-parva.
 
             ENDIF.
+            lv_first = abap_false.
           ELSE.
             IF <ls_usr05_change>-parva_new IS INITIAL.
               <ls_usr05_change>-parva_new = lv_parva.
@@ -234,9 +242,12 @@ CLASS lcl_usr05 IMPLEMENTATION.
   METHOD select_datalog.
 
     DATA:
-      lo_conv    TYPE REF TO cl_abap_conv_in_ce,
-      lt_datalog TYPE tyt_datalog,
-      lt_usr01   TYPE tyt_usr01.
+      lo_conv     TYPE REF TO cl_abap_conv_in_ce,
+      lt_datalog  TYPE tyt_datalog,
+      lt_usr01    TYPE tyt_usr01,
+      lv_codepage TYPE abap_encod,
+      lv_buffer   TYPE string,
+      lv_len      TYPE i.
 
 
     FIELD-SYMBOLS:
@@ -263,39 +274,66 @@ CLASS lcl_usr05 IMPLEMENTATION.
       <ls_usr05>-tcode    = <ls_datalog>-tcode.
       <ls_usr05>-optype   = <ls_datalog>-optype.
 
-      "restliche Werte aus logdate ermitteln
-      CALL METHOD cl_abap_conv_in_ce=>create
-        EXPORTING
-          encoding    = '4102'   "unicode
-          endian      = 'B'
-          ignore_cerr = 'X'
-          replacement = '#'
-          input       = <ls_datalog>-logdata
-        RECEIVING
-          conv        = lo_conv.
-      CALL METHOD lo_conv->read
-        EXPORTING
-          n    = 3
-        IMPORTING
-          data = <ls_usr05>-mandt.
+      "--- Begin of Change 2026-06-24: Keys are parsed reliably from logkey to handle all versno types
+      <ls_usr05>-mandt = <ls_datalog>-logkey+0(3).
+      <ls_usr05>-bname = <ls_datalog>-logkey+3(12).
+      <ls_usr05>-parid = <ls_datalog>-logkey+15(20).
+      "--- End of Change 2026-06-24
 
-      CALL METHOD lo_conv->read
-        EXPORTING
-          n    = 12
-        IMPORTING
-          data = <ls_usr05>-bname.
+      " Decode parva from logdata depending on versno
+      "--- Begin of Change 2026-06-24: Select correct codepage and parsing offset depending on versno
+      IF <ls_datalog>-logdata IS NOT INITIAL.
+        IF <ls_datalog>-versno = '02'.
+          lv_codepage = '4102'.
+        ELSEIF <ls_datalog>-versno = '01'.
+          CALL FUNCTION 'SCP_GET_CODEPAGE_NUMBER'
+            IMPORTING
+              appl_codepage  = lv_codepage
+            EXCEPTIONS
+              internal_error = 1
+              OTHERS         = 2.
+          IF sy-subrc <> 0.
+            lv_codepage = '4102'.
+          ENDIF.
+        ELSE.
+          lv_codepage = '4102'.
+        ENDIF.
 
-      CALL METHOD lo_conv->read
-        EXPORTING
-          n    = 20
-        IMPORTING
-          data = <ls_usr05>-parid.
+        TRY.
+            CALL METHOD cl_abap_conv_in_ce=>create
+              EXPORTING
+                encoding    = lv_codepage
+                endian      = 'B'
+                ignore_cerr = 'X'
+                replacement = '#'
+                input       = <ls_datalog>-logdata
+              RECEIVING
+                conv        = lo_conv.
 
-      CALL METHOD lo_conv->read
-        EXPORTING
-          n    = 40
-        IMPORTING
-          data = <ls_usr05>-parva.
+            CLEAR lv_buffer.
+            CALL METHOD lo_conv->read
+              IMPORTING
+                data = lv_buffer.
+
+            lv_len = strlen( lv_buffer ).
+            IF <ls_datalog>-versno >= '01'.
+              IF lv_len >= 75.
+                <ls_usr05>-parva = lv_buffer+35(40).
+              ELSEIF lv_len > 35.
+                <ls_usr05>-parva = lv_buffer+35.
+              ENDIF.
+            ELSE.
+              IF lv_len >= 40.
+                <ls_usr05>-parva = lv_buffer+0(40).
+              ELSE.
+                <ls_usr05>-parva = lv_buffer.
+              ENDIF.
+            ENDIF.
+          CATCH cx_root.
+            CLEAR <ls_usr05>-parva.
+        ENDTRY.
+      ENDIF.
+      "--- End of Change 2026-06-24
 
     ENDLOOP.
 
@@ -328,7 +366,8 @@ CLASS lcl_usr05 IMPLEMENTATION.
       lt_usr05_ins TYPE tyt_usr05,
 
       lv_found     TYPE abap_bool,
-      lv_logtime   TYPE sytime.
+      lv_logtime   TYPE sytime,
+      lv_logdate   TYPE sydats.
 
     FIELD-SYMBOLS:
       <ls_usr05_chg>    TYPE tys_usr05,
@@ -344,7 +383,9 @@ CLASS lcl_usr05 IMPLEMENTATION.
     DELETE ADJACENT DUPLICATES FROM lt_usr05_chg COMPARING logdate logtime mandt bname.
 
     LOOP AT lt_usr05_chg ASSIGNING <ls_usr05_chg>.
-      CLEAR: lt_usr05_del[], lt_usr05_ins[].
+      "--- Begin of Change 2026-06-24: Clear lt_usr05_upd to prevent duplicates leaking from previous loops
+      CLEAR: lt_usr05_del[], lt_usr05_ins[], lt_usr05_upd[].
+      "--- End of Change 2026-06-24
       "separieren der Inserts und Delete
       LOOP AT gt_usr05 ASSIGNING <ls_usr05> WHERE logdate = <ls_usr05_chg>-logdate
                                               AND logtime = <ls_usr05_chg>-logtime
@@ -369,8 +410,15 @@ CLASS lcl_usr05 IMPLEMENTATION.
       ENDIF.
 
       "Problem genau eine S danach
+      "--- Begin of Change 2026-06-24: Handle date rollover when time is 23:59:59 and rolls to 00:00:00
       lv_logtime =  <ls_usr05_chg>-logtime + 1.
-      LOOP AT gt_usr05 ASSIGNING <ls_usr05> WHERE logdate = <ls_usr05_chg>-logdate
+      IF lv_logtime = '000000' AND <ls_usr05_chg>-logtime = '235959'.
+        lv_logdate = <ls_usr05_chg>-logdate + 1.
+      ELSE.
+        lv_logdate = <ls_usr05_chg>-logdate.
+      ENDIF.
+      "--- End of Change 2026-06-24
+      LOOP AT gt_usr05 ASSIGNING <ls_usr05> WHERE logdate = lv_logdate
                                           AND logtime = lv_logtime
                                           AND mandt   = <ls_usr05_chg>-mandt
                                           AND bname   = <ls_usr05_chg>-bname.
@@ -438,7 +486,6 @@ CLASS lcl_usr05 IMPLEMENTATION.
       ENDLOOP.
 
     ENDLOOP. "AT lt_usr05_chg
-
 
   ENDMETHOD.                    "determine_changes
 
