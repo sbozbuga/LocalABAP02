@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -13,14 +13,8 @@
    <TPOOL>
     <item>
      <ID>I</ID>
-     <KEY>001</KEY>
-     <ENTRY>Change dates:</ENTRY>
-     <LENGTH>23</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
      <KEY>B01</KEY>
-     <ENTRY>User Selection</ENTRY>
+     <ENTRY>Selection</ENTRY>
      <LENGTH>14</LENGTH>
     </item>
     <item>
@@ -33,20 +27,6 @@
      <ID>R</ID>
      <ENTRY>USR05 Change Logs Explorer</ENTRY>
      <LENGTH>26</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>DBEG</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>DEND</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
@@ -63,10 +43,15 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>S_LOGDAT</KEY>
+     <ENTRY>Log Date</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>S_OPTYPE</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
+     <ENTRY>Operation type</ENTRY>
+     <LENGTH>22</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -114,7 +99,7 @@
        <ID>S</ID>
        <KEY>P_REAL</KEY>
        <ENTRY>Nur echte Änderungen</ENTRY>
-       <LENGTH>20</LENGTH>
+       <LENGTH>28</LENGTH>
       </item>
      </TEXTPOOL>
     </item>

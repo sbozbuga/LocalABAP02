@@ -5,7 +5,7 @@
 *& Optimized Static Version (Zero Dynamic DDIC Calls)
 *&---------------------------------------------------------------------*
 REPORT zsbtmp_usr05_tree.
-
+TABLES: dbtablog, usr05.
 TYPE-POOLS: icon.
 
 TYPES: ty_it_events TYPE STANDARD TABLE OF cntl_simple_event WITH DEFAULT KEY,
@@ -15,14 +15,10 @@ TYPES: ty_it_events TYPE STANDARD TABLE OF cntl_simple_event WITH DEFAULT KEY,
 * SELECTION SCREEN
 *---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
-DATA: gv_bname TYPE usr05-bname.
-SELECT-OPTIONS s_bname FOR gv_bname NO INTERVALS MATCHCODE OBJECT user_logon.
+SELECT-OPTIONS: s_bname FOR dbtablog-username MATCHCODE OBJECT user_logon,
+                s_logdat FOR dbtablog-logdate.
 SELECTION-SCREEN END OF BLOCK b01.
 
-SELECTION-SCREEN BEGIN OF BLOCK interv WITH FRAME TITLE TEXT-001.
-PARAMETERS: dbeg TYPE tlog_begdat OBLIGATORY,
-            dend TYPE tlog_enddat DEFAULT sy-datum OBLIGATORY.
-SELECTION-SCREEN END OF BLOCK interv.
 
 SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
 DATA: gv_usera  TYPE dbtablog-username,
@@ -35,8 +31,9 @@ PARAMETERS p_real AS CHECKBOX DEFAULT abap_true.
 SELECTION-SCREEN END OF BLOCK b02.
 
 INITIALIZATION.
-  dbeg = sy-datum - 10.
-
+  s_logdat[] = VALUE #( ( sign = 'I' option = 'EQ'
+                           low = sy-datum - 10
+                          high = sy-datum ) ).
 *---------------------------------------------------------------------*
 * LCL_USR05_LOG_DECODER
 *---------------------------------------------------------------------*
@@ -52,7 +49,7 @@ CLASS lcl_usr05_log_decoder DEFINITION FINAL.
     CLASS-METHODS:
       decode_log
         IMPORTING
-          is_dbtablog   TYPE dbtablog
+          is_dbtablog    TYPE dbtablog
         RETURNING
           VALUE(rs_data) TYPE ty_usr05_data.
 ENDCLASS.
@@ -123,10 +120,10 @@ CLASS lcl_report DEFINITION FINAL.
              bname TYPE usr05-bname.
              INCLUDE TYPE txw_cd_dbtablog.
              INCLUDE TYPE txw_cd_gen.
-    TYPES: END OF txw_cd_usr05,
+           TYPES: END OF txw_cd_usr05,
            BEGIN OF ty_output.
              INCLUDE TYPE txw_cd_usr05.
-    TYPES:   parid TYPE usr05-parid,
+             TYPES:   parid TYPE usr05-parid,
              icon  TYPE icon_d,
              color TYPE lvc_t_scol,
            END OF ty_output,
@@ -168,11 +165,11 @@ CLASS lcl_report DEFINITION FINAL.
           VALUE(rs_out) TYPE ty_output,
       get_next_parva
         IMPORTING
-          is_dbtablog   TYPE dbtablog
-          id_tabix_next TYPE i
-          id_bname      TYPE usr05-bname
-          id_parid      TYPE usr05-parid
-          it_dbtablog   TYPE tt_dbtablog
+          is_dbtablog     TYPE dbtablog
+          id_tabix_next   TYPE i
+          id_bname        TYPE usr05-bname
+          id_parid        TYPE usr05-parid
+          it_dbtablog     TYPE tt_dbtablog
         RETURNING
           VALUE(rv_parva) TYPE usr05-parva.
 ENDCLASS.
@@ -225,9 +222,9 @@ CLASS lcl_report IMPLEMENTATION.
     TYPES: BEGIN OF ty_usr01_bname,
              bname TYPE usr01-bname,
            END OF ty_usr01_bname.
-    DATA: lt_users   TYPE STANDARD TABLE OF ty_usr01_bname WITH DEFAULT KEY,
-          lt_dblog   TYPE tt_dbtablog,
-          rt_logkey  TYPE RANGE OF dbtablog-logkey.
+    DATA: lt_users  TYPE STANDARD TABLE OF ty_usr01_bname WITH DEFAULT KEY,
+          lt_dblog  TYPE tt_dbtablog,
+          rt_logkey TYPE RANGE OF dbtablog-logkey.
 
     IF s_bname IS NOT INITIAL.
       SELECT bname FROM usr01
@@ -253,7 +250,7 @@ CLASS lcl_report IMPLEMENTATION.
     SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
       WHERE tabname  = 'USR05'
-        AND logdate  BETWEEN @dbeg AND @dend
+        AND logdate  IN @s_logdat
         AND logkey   IN @rt_logkey
         AND username IN @s_usera
         AND tcode    IN @s_tcode
