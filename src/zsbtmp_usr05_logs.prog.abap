@@ -5,6 +5,7 @@
 *& Optimized Static Version (Zero Dynamic DDIC Calls)
 *&---------------------------------------------------------------------*
 REPORT zsbtmp_usr05_logs.
+TABLES: dbtablog, usr05.
 
 TYPE-POOLS: icon.
 
@@ -12,14 +13,9 @@ TYPE-POOLS: icon.
 * SELECTION SCREEN
 *---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
-DATA: gv_bname TYPE usr05-bname.
-SELECT-OPTIONS s_bname FOR gv_bname NO INTERVALS MATCHCODE OBJECT user_logon.
+SELECT-OPTIONS: s_bname FOR dbtablog-username MATCHCODE OBJECT user_logon,
+                s_logdat FOR dbtablog-logdate.
 SELECTION-SCREEN END OF BLOCK b01.
-
-SELECTION-SCREEN BEGIN OF BLOCK interv WITH FRAME TITLE TEXT-001.
-PARAMETERS: dbeg TYPE tlog_begdat OBLIGATORY,
-            dend TYPE tlog_enddat DEFAULT sy-datum OBLIGATORY.
-SELECTION-SCREEN END OF BLOCK interv.
 
 SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
 DATA: gv_usera  TYPE dbtablog-username,
@@ -32,7 +28,9 @@ PARAMETERS p_real AS CHECKBOX DEFAULT abap_true.
 SELECTION-SCREEN END OF BLOCK b02.
 
 INITIALIZATION.
-  dbeg = sy-datum - 10.
+  s_logdat[] = VALUE #( ( sign = 'I' option = 'EQ'
+                           low = sy-datum - 10
+                          high = sy-datum ) ).
 
 *---------------------------------------------------------------------*
 * LCL_USR05_LOG_DECODER
@@ -207,7 +205,7 @@ CLASS lcl_report IMPLEMENTATION.
     SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
       FROM dbtablog
       WHERE tabname  = 'USR05'
-        AND logdate  BETWEEN @dbeg AND @dend
+        AND logdate  IN @s_logdat
         AND logkey   IN @rt_logkey
         AND username IN @s_usera
         AND tcode    IN @s_tcode
