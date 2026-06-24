@@ -12,21 +12,6 @@ TYPE-POOLS: icon.
 *---------------------------------------------------------------------*
 * SELECTION SCREEN
 *---------------------------------------------------------------------*
-SELECTION-SCREEN BEGIN OF TABBED BLOCK main_tab FOR 12 LINES.
-SELECTION-SCREEN TAB (20) tab_user USER-COMMAND ucomm_user DEFAULT SCREEN 101.
-SELECTION-SCREEN TAB (20) tab_gen USER-COMMAND ucomm_gen DEFAULT SCREEN 102.
-SELECTION-SCREEN END OF BLOCK main_tab.
-
-* Subscreen 101: User
-SELECTION-SCREEN BEGIN OF SCREEN 101 AS SUBSCREEN.
-SELECTION-SCREEN BEGIN OF BLOCK b_usr WITH FRAME TITLE TEXT-b01.
-SELECT-OPTIONS: s_usr FOR dbtablog-username MATCHCODE OBJECT user_logon.
-PARAMETERS: p_max TYPE i DEFAULT 6.
-SELECTION-SCREEN END OF BLOCK b_usr.
-SELECTION-SCREEN END OF SCREEN 101.
-
-* Subscreen 102: Generic
-SELECTION-SCREEN BEGIN OF SCREEN 102 AS SUBSCREEN.
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
 SELECT-OPTIONS: s_bname FOR dbtablog-username MATCHCODE OBJECT user_logon,
                 s_logdat FOR dbtablog-logdate.
@@ -41,15 +26,8 @@ SELECT-OPTIONS: s_usera  FOR gv_usera,
                 s_optype FOR gv_optype DEFAULT 'U'.
 PARAMETERS p_real AS CHECKBOX DEFAULT abap_true.
 SELECTION-SCREEN END OF BLOCK b02.
-SELECTION-SCREEN END OF SCREEN 102.
 
 INITIALIZATION.
-  tab_user = 'User'.
-  tab_gen  = 'Generic'.
-  main_tab-prog = sy-repid.
-  main_tab-dynnr = 101.
-  main_tab-activetab = 'UCOMM_USER'.
-
   s_logdat[] = VALUE #( ( sign = 'I' option = 'EQ'
                            low = sy-datum - 10
                           high = sy-datum ) ).
@@ -201,22 +179,11 @@ CLASS lcl_report IMPLEMENTATION.
            END OF ty_usr01_bname.
     DATA: lt_users   TYPE STANDARD TABLE OF ty_usr01_bname WITH DEFAULT KEY,
           lt_dblog   TYPE tt_dbtablog,
-          rt_logkey  TYPE RANGE OF dbtablog-logkey,
-          lt_usr_sel TYPE RANGE OF dbtablog-username.
+          rt_logkey  TYPE RANGE OF dbtablog-logkey.
 
-    DATA(lv_active_tab) = COND #( WHEN main_tab-activetab IS INITIAL OR main_tab-activetab = 'UCOMM_USER'
-                                  THEN 'UCOMM_USER'
-                                  ELSE main_tab-activetab ).
-
-    IF lv_active_tab = 'UCOMM_USER'.
-      lt_usr_sel = s_usr[].
-    ELSE.
-      lt_usr_sel = s_bname[].
-    ENDIF.
-
-    IF lt_usr_sel IS NOT INITIAL.
+    IF s_bname IS NOT INITIAL.
       SELECT bname FROM usr01
-        WHERE bname IN @lt_usr_sel
+        WHERE bname IN @s_bname
         INTO CORRESPONDING FIELDS OF TABLE @lt_users.
       IF sy-subrc = 0.
         LOOP AT lt_users INTO DATA(ls_user).
@@ -234,30 +201,22 @@ CLASS lcl_report IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
+    DATA(lv_hint) = COND string( WHEN s_bname IS NOT INITIAL
+                                 THEN 'INDEX("DBTABLOG" "DBTABLOG~KEY")'
+                                 ELSE 'INDEX("DBTABLOG" "DBTABLOG~TAB")' ).
+
     " Retrieve logs matching criteria with modern, fast selection
-    IF lv_active_tab = 'UCOMM_USER'.
-      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-        FROM dbtablog
-        WHERE tabname = 'USR05'
-          AND logkey  IN @rt_logkey
-        ORDER BY logdate DESCENDING, logtime DESCENDING
-        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
-        UP TO @p_max ROWS.
-
-      SORT lt_dblog BY logkey ASCENDING logdate ASCENDING logtime ASCENDING.
-    ELSE.
-      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-        FROM dbtablog
-        WHERE tabname  = 'USR05'
-          AND logdate  IN @s_logdat
-          AND logkey   IN @rt_logkey
-          AND username IN @s_usera
-          AND tcode    IN @s_tcode
-          AND optype   IN @s_optype
-        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
-    ENDIF.
-
+    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+      FROM dbtablog
+      WHERE tabname  = 'USR05'
+        AND logdate  IN @s_logdat
+        AND logkey   IN @rt_logkey
+        AND username IN @s_usera
+        AND tcode    IN @s_tcode
+        AND optype   IN @s_optype
+      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
+      %_HINTS ORACLE lv_hint HDB lv_hint.
     IF sy-subrc <> 0.
       " check sy-subrc for linter
     ENDIF.
@@ -266,14 +225,8 @@ CLASS lcl_report IMPLEMENTATION.
       " Decode log entry
       DATA(ls_current) = lcl_usr05_log_decoder=>decode_log( <ls_dblog> ).
 
-      IF lv_active_tab = 'UCOMM_USER'.
-        IF ls_current-bname NOT IN s_usr.
-          CONTINUE.
-        ENDIF.
-      ELSE.
-        IF ls_current-bname NOT IN s_bname.
-          CONTINUE.
-        ENDIF.
+      IF ls_current-bname NOT IN s_bname.
+        CONTINUE.
       ENDIF.
 
       process_log_entry(

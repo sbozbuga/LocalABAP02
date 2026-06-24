@@ -82,19 +82,6 @@
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_MAX</KEY>
-     <ENTRY>Number of changes</ENTRY>
-     <LENGTH>25</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>S_USR</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
-    </item>
    </TPOOL>
    <I18N_TPOOL>
     <item>
@@ -128,19 +115,6 @@
        <KEY>P_REAL</KEY>
        <ENTRY>Nur echte Änderungen</ENTRY>
        <LENGTH>28</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_MAX</KEY>
-       <ENTRY>Anzahl Änderungen</ENTRY>
-       <LENGTH>25</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>S_USR</KEY>
-       <ENTRY>.</ENTRY>
-       <LENGTH>9</LENGTH>
-       <SPLIT>D</SPLIT>
       </item>
      </TEXTPOOL>
     </item>
