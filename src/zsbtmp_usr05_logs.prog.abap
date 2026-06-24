@@ -201,22 +201,33 @@ CLASS lcl_report IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    DATA(lv_hint) = COND string( WHEN s_bname IS NOT INITIAL
-                                 THEN 'INDEX("DBTABLOG" "DBTABLOG~KEY")'
-                                 ELSE 'INDEX("DBTABLOG" "DBTABLOG~TAB")' ).
-
     " Retrieve logs matching criteria with modern, fast selection
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
-      FROM dbtablog
-      WHERE tabname  = 'USR05'
-        AND logdate  IN @s_logdat
-        AND logkey   IN @rt_logkey
-        AND username IN @s_usera
-        AND tcode    IN @s_tcode
-        AND optype   IN @s_optype
-      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
-      %_HINTS ORACLE lv_hint HDB lv_hint.
+    IF s_bname IS NOT INITIAL.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  IN @s_logdat
+          AND logkey   IN @rt_logkey
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
+        %_HINTS ORACLE 'INDEX("DBTABLOG" "DBTABLOG~KEY")' HDB 'INDEX("DBTABLOG" "DBTABLOG~KEY")'.
+    ELSE.
+      SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+        FROM dbtablog
+        WHERE tabname  = 'USR05'
+          AND logdate  IN @s_logdat
+          AND logkey   IN @rt_logkey
+          AND username IN @s_usera
+          AND tcode    IN @s_tcode
+          AND optype   IN @s_optype
+        ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
+        %_HINTS ORACLE 'INDEX("DBTABLOG" "DBTABLOG~TAB")' HDB 'INDEX("DBTABLOG" "DBTABLOG~TAB")'.
+    ENDIF.
+
     IF sy-subrc <> 0.
       " check sy-subrc for linter
     ENDIF.
