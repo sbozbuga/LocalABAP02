@@ -29,6 +29,11 @@ TYPES: BEGIN OF ty_shared_record,
          p_real   TYPE abap_bool,
        END OF ty_shared_record.
 
+TYPES: BEGIN OF ty_task_input,
+         dblog  TYPE ty_dbtablog,
+         shared TYPE ty_shared_record,
+       END OF ty_task_input.
+
 TYPES: BEGIN OF ty_xw_cd_usr05,
          bname TYPE usr05-bname.
          INCLUDE TYPE txw_cd_dbtablog.
@@ -205,44 +210,42 @@ ENDCLASS.
 CLASS lcl_parallel_processor IMPLEMENTATION.
 
   METHOD do.
-    DATA: ls_shared TYPE ty_shared_record,
-          lt_dblog  TYPE ty_dbtablog,
-          lt_output TYPE STANDARD TABLE OF ty_output.
+    DATA: ls_task_input TYPE ty_task_input,
+          lt_output     TYPE STANDARD TABLE OF ty_output.
 
-    IMPORT buffer_task_shared = ls_shared FROM DATA BUFFER p_in_all.
-    IMPORT buffer_task        = lt_dblog  FROM DATA BUFFER p_in.
+    IMPORT buffer_task = ls_task_input FROM DATA BUFFER p_in.
 
-    LOOP AT lt_dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
+    LOOP AT ls_task_input-dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
       " 1. Fast filters on the record before decoding (to avoid unnecessary decoding)
-      IF <ls_dblog>-logdate NOT IN ls_shared-s_logdat.
+      IF <ls_dblog>-logdate NOT IN ls_task_input-shared-s_logdat.
         CONTINUE.
       ENDIF.
-      IF <ls_dblog>-username NOT IN ls_shared-s_usera.
+      IF <ls_dblog>-username NOT IN ls_task_input-shared-s_usera.
         CONTINUE.
       ENDIF.
-      IF <ls_dblog>-tcode NOT IN ls_shared-s_tcode.
+      IF <ls_dblog>-tcode NOT IN ls_task_input-shared-s_tcode.
         CONTINUE.
       ENDIF.
-      IF <ls_dblog>-optype NOT IN ls_shared-s_optype.
+      IF <ls_dblog>-optype NOT IN ls_task_input-shared-s_optype.
         CONTINUE.
       ENDIF.
 
       " 2. Filter on target user (bname) from logkey
       DATA(ls_current) = lcl_usr05_log_decoder=>decode_log( <ls_dblog> ).
-      IF ls_current-bname NOT IN ls_shared-s_bname.
+      IF ls_current-bname NOT IN ls_task_input-shared-s_bname.
         CONTINUE.
       ENDIF.
 
       DATA(ls_output) = process_log_entry(
         is_dblog    = <ls_dblog>
         id_tabix    = sy-tabix
-        it_dbtablog = lt_dblog
+        it_dbtablog = ls_task_input-dblog
         is_current  = ls_current
-        it_bname    = ls_shared-s_bname
-        it_usera    = ls_shared-s_usera
-        it_tcode    = ls_shared-s_tcode
-        it_optype   = ls_shared-s_optype
-        iv_real     = ls_shared-p_real ).
+        it_bname    = ls_task_input-shared-s_bname
+        it_usera    = ls_task_input-shared-s_usera
+        it_tcode    = ls_task_input-shared-s_tcode
+        it_optype   = ls_task_input-shared-s_optype
+        iv_real     = ls_task_input-shared-p_real ).
 
       IF ls_output-bname IS NOT INITIAL.
         APPEND ls_output TO lt_output.
@@ -333,11 +336,11 @@ CLASS lcl_parallel_processor IMPLEMENTATION.
     SELECT tabname logdate logtime logkey optype username tcode language dataln logdata versno
       FROM dbtablog
       INTO CORRESPONDING FIELDS OF TABLE lt_next_logs
+      UP TO 1 ROWS
       WHERE tabname = is_dbtablog-tabname
         AND logkey  = is_dbtablog-logkey
         AND ( logdate > is_dbtablog-logdate OR ( logdate = is_dbtablog-logdate AND logtime > is_dbtablog-logtime ) )
-      ORDER BY logdate ASCENDING logtime ASCENDING
-      UP TO 1 ROWS.
+      ORDER BY logdate ASCENDING logtime ASCENDING.
     IF sy-subrc = 0.
       READ TABLE lt_next_logs INTO DATA(ls_next_log) INDEX 1.
       IF sy-subrc = 0.
@@ -373,8 +376,7 @@ CLASS lcl_report IMPLEMENTATION.
           lt_chunk     TYPE ty_dbtablog,
           lt_in_tab    TYPE cl_abap_parallel=>t_in_tab,
           lv_in_single TYPE xstring,
-          ls_shared    TYPE ty_shared_record,
-          lv_shared    TYPE xstring.
+          lt_out_tab   TYPE cl_abap_parallel=>t_out_tab.
 
     " Retrieve logs matching criteria via OPEN CURSOR (exclusively using TAB hint for USR05)
     OPEN CURSOR ld_cursor FOR
@@ -409,7 +411,8 @@ CLASS lcl_report IMPLEMENTATION.
         ENDIF.
 
         " Fast decode of target user from logkey (mandt 3 chars + bname 12 chars)
-        DATA(lv_bname) = CONV usr05-bname( <ls_dblog>-logkey+3(12) ).
+        DATA: lv_bname TYPE usr05-bname.
+        lv_bname = <ls_dblog>-logkey+3(12).
         IF lv_bname NOT IN s_bname.
           CONTINUE.
         ENDIF.
@@ -418,23 +421,23 @@ CLASS lcl_report IMPLEMENTATION.
       ENDLOOP.
 
       IF lt_filtered IS NOT INITIAL.
-        EXPORT buffer_task = lt_filtered TO DATA BUFFER lv_in_single.
+        DATA: ls_task_input TYPE ty_task_input.
+        CLEAR ls_task_input.
+        ls_task_input-dblog = lt_filtered.
+        ls_task_input-shared-s_bname[]  = s_bname[].
+        ls_task_input-shared-s_logdat[] = s_logdat[].
+        ls_task_input-shared-s_usera[]  = s_usera[].
+        ls_task_input-shared-s_tcode[]  = s_tcode[].
+        ls_task_input-shared-s_optype[] = s_optype[].
+        ls_task_input-shared-p_real     = p_real.
+
+        EXPORT buffer_task = ls_task_input TO DATA BUFFER lv_in_single.
         APPEND lv_in_single TO lt_in_tab.
       ENDIF.
     ENDDO.
     CLOSE CURSOR ld_cursor.
 
     IF lt_in_tab IS NOT INITIAL.
-      " Pack shared selection settings
-      ls_shared-s_bname[]  = s_bname[].
-      ls_shared-s_logdat[] = s_logdat[].
-      ls_shared-s_usera[]  = s_usera[].
-      ls_shared-s_tcode[]  = s_tcode[].
-      ls_shared-s_optype[] = s_optype[].
-      ls_shared-p_real     = p_real.
-
-      EXPORT buffer_task_shared = ls_shared TO DATA BUFFER lv_shared.
-
       " Create the parallel execution task
       DATA(lo_parallel) = NEW lcl_parallel_processor( ).
 
@@ -442,9 +445,8 @@ CLASS lcl_report IMPLEMENTATION.
       lo_parallel->run(
         EXPORTING
           p_in_tab  = lt_in_tab
-          p_in_all  = lv_shared
         IMPORTING
-          p_out_tab = DATA(lt_out_tab) ).
+          p_out_tab = lt_out_tab ).
 
       " Collect and deserialize outputs
       LOOP AT lt_out_tab ASSIGNING FIELD-SYMBOL(<ls_out>).
