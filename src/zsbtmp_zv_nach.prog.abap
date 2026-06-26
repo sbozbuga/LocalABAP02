@@ -511,8 +511,23 @@ CLASS lcl_report IMPLEMENTATION.
     ls_fcat-col_pos   = 3.
     APPEND ls_fcat TO lt_fieldcat.
 
+    DATA(lo_struct) = CAST cl_abap_structdescr( cl_abap_typedescr=>describe_by_name( 'NACH' ) ).
+    DATA: lt_dfies TYPE ddfields.
+    TRY.
+        lt_dfies = lo_struct->get_ddic_field_list( ).
+      CATCH cx_root.
+    ENDTRY.
+
     LOOP AT lt_fieldcat ASSIGNING FIELD-SYMBOL(<ls_fcat>).
-      IF <ls_fcat>-rollname CP 'NA_OBS*'.
+      DATA(lv_rollname) = <ls_fcat>-rollname.
+      IF lv_rollname IS INITIAL.
+        READ TABLE lt_dfies INTO DATA(ls_dfies) WITH KEY fieldname = <ls_fcat>-fieldname.
+        IF sy-subrc = 0.
+          lv_rollname = ls_dfies-rollname.
+        ENDIF.
+      ENDIF.
+
+      IF lv_rollname CP 'NA_OBS*'.
         <ls_fcat>-no_out = 'X'.
       ENDIF.
 
