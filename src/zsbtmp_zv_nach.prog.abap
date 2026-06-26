@@ -388,6 +388,22 @@ CLASS lcl_report IMPLEMENTATION.
         APPEND VALUE #( handle = 2 value = '2' text = '2 - Archive only' ) TO lt_dropdown.
         APPEND VALUE #( handle = 2 value = '3' text = '3 - Print and archive' ) TO lt_dropdown.
 
+        " Dropdown handle 3: NACHA (Sendemedium)
+        APPEND VALUE #( handle = 3 value = '1' text = '1 - Print output' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '2' text = '2 - Fax' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '4' text = '4 - Telex' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '5' text = '5 - External send' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '7' text = '7 - E-Mail' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '8' text = '8 - Special function' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '9' text = '9 - Events (Workflow)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = 'A' text = 'A - Distribution (ALE)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = 'I' text = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
+
+        " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
+        APPEND VALUE #( handle = 4 value = ' ' text = 'Default (Standard)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 4 value = 'X' text = 'X - Yes (Print cover page)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 4 value = 'N' text = 'N - No (No cover page)' ) TO lt_dropdown.
+
         go_grid->set_drop_down_table( it_drop_down = lt_dropdown ).
 
         DATA: lt_fieldcat TYPE lvc_t_fcat.
@@ -424,6 +440,12 @@ CLASS lcl_report IMPLEMENTATION.
             WHEN 'TDARMOD'.
               <ls_fcat>-edit      = 'X'.
               <ls_fcat>-drdn_hndl = '2'.
+            WHEN 'NACHA'.
+              <ls_fcat>-edit      = 'X'.
+              <ls_fcat>-drdn_hndl = '3'.
+            WHEN 'TDOCOVER'.
+              <ls_fcat>-edit      = 'X'.
+              <ls_fcat>-drdn_hndl = '4'.
             WHEN OTHERS.
               <ls_fcat>-edit = abap_false.
           ENDCASE.
