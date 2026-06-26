@@ -128,15 +128,19 @@ CLASS lcl_vakey_builder IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
-    DATA: lt_sel_fields TYPE TABLE OF string.
+    DATA: lv_select_list TYPE string.
     LOOP AT lt_fields INTO DATA(ls_f).
-      APPEND ls_f-fieldname TO lt_sel_fields.
+      IF lv_select_list IS INITIAL.
+        lv_select_list = ls_f-fieldname.
+      ELSE.
+        lv_select_list = |{ lv_select_list }, { ls_f-fieldname }|.
+      ENDIF.
     ENDLOOP.
-    IF lt_sel_fields IS INITIAL.
-      APPEND 'KNUMH' TO lt_sel_fields.
+    IF lv_select_list IS INITIAL.
+      lv_select_list = 'KNUMH'.
     ENDIF.
 
-    SELECT SINGLE (lt_sel_fields) FROM (lv_tabname) WHERE knumh = @iv_knumh INTO CORRESPONDING FIELDS OF @<ls_row>.
+    SELECT SINGLE (lv_select_list) FROM (lv_tabname) WHERE knumh = @iv_knumh INTO CORRESPONDING FIELDS OF @<ls_row>.
     IF sy-subrc = 0.
       LOOP AT lt_fields INTO DATA(ls_field).
         ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row> TO FIELD-SYMBOL(<lv_val>).
