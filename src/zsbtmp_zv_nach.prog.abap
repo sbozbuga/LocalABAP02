@@ -182,20 +182,43 @@ ENDCLASS.
 *---------------------------------------------------------------------*
 CLASS lcl_event_handler IMPLEMENTATION.
   METHOD handle_toolbar.
+    DATA: lv_txt_disp   TYPE string,
+          lv_qinfo_disp TYPE string,
+          lv_txt_save   TYPE string,
+          lv_qinfo_save TYPE string,
+          lv_txt_edit   TYPE string,
+          lv_qinfo_edit TYPE string.
+
+    IF sy-langu = 'D'.
+      lv_txt_disp   = 'Anzeigemodus'.
+      lv_qinfo_disp = 'In den Anzeigemodus wechseln'.
+      lv_txt_save   = 'Sichern'.
+      lv_qinfo_save = 'Änderungen sichern'.
+      lv_txt_edit   = 'Änderungsmodus'.
+      lv_qinfo_edit = 'In den Änderungsmodus wechseln'.
+    ELSE.
+      lv_txt_disp   = 'Display Mode'.
+      lv_qinfo_disp = 'Switch to Display Mode'.
+      lv_txt_save   = 'Save'.
+      lv_qinfo_save = 'Save Changes'.
+      lv_txt_edit   = 'Edit Mode'.
+      lv_qinfo_edit = 'Switch to Edit Mode'.
+    ENDIF.
+
     IF gv_edit_mode = abap_true.
       APPEND VALUE #( butn_type = 3 ) TO e_object->mt_toolbar.
       APPEND VALUE #(
         function  = 'DISPLAY'
         icon      = icon_display
-        quickinfo = 'Switch to Display Mode'
-        text      = 'Display Mode'
+        quickinfo = CONV iconquick( lv_qinfo_disp )
+        text      = CONV buttontext( lv_txt_disp )
         disabled  = abap_false
       ) TO e_object->mt_toolbar.
       APPEND VALUE #(
         function  = 'SAVE'
         icon      = icon_system_save
-        quickinfo = 'Save Changes'
-        text      = 'Save'
+        quickinfo = CONV iconquick( lv_qinfo_save )
+        text      = CONV buttontext( lv_txt_save )
         disabled  = abap_false
       ) TO e_object->mt_toolbar.
     ELSE.
@@ -203,8 +226,8 @@ CLASS lcl_event_handler IMPLEMENTATION.
       APPEND VALUE #(
         function  = 'EDIT'
         icon      = icon_change
-        quickinfo = 'Switch to Edit Mode'
-        text      = 'Edit Mode'
+        quickinfo = CONV iconquick( lv_qinfo_edit )
+        text      = CONV buttontext( lv_txt_edit )
         disabled  = abap_false
       ) TO e_object->mt_toolbar.
     ENDIF.
@@ -238,7 +261,11 @@ CLASS lcl_report IMPLEMENTATION.
     gv_edit_mode = abap_false.
     get_data( ).
     IF gt_output IS INITIAL.
-      MESSAGE 'No condition records found matching selection criteria.' TYPE 'S' DISPLAY LIKE 'W'.
+      IF sy-langu = 'D'.
+        MESSAGE 'Keine Nachrichtenkonditionen zu den Selektionskriterien gefunden.' TYPE 'S' DISPLAY LIKE 'W'.
+      ELSE.
+        MESSAGE 'No condition records found matching selection criteria.' TYPE 'S' DISPLAY LIKE 'W'.
+      ENDIF.
       RETURN.
     ENDIF.
 
@@ -328,7 +355,11 @@ CLASS lcl_report IMPLEMENTATION.
             tabname      = 'NACH'
             varkey       = lv_key.
       ENDLOOP.
-      MESSAGE 'Save aborted: One of the records is locked by another user.' TYPE 'E'.
+      IF sy-langu = 'D'.
+        MESSAGE 'Sichern abgebrochen: Ein Datensatz ist von einem anderen Benutzer gesperrt.' TYPE 'E'.
+      ELSE.
+        MESSAGE 'Save aborted: One of the records is locked by another user.' TYPE 'E'.
+      ENDIF.
       RETURN.
     ENDIF.
 
@@ -342,7 +373,11 @@ CLASS lcl_report IMPLEMENTATION.
             varkey       = lv_key.
       ENDLOOP.
       gt_original = gt_output.
-      MESSAGE |Saved { lv_success } records successfully.| TYPE 'S'.
+      IF sy-langu = 'D'.
+        MESSAGE |Es wurden { lv_success } Sätze erfolgreich gesichert.| TYPE 'S'.
+      ELSE.
+        MESSAGE |Saved { lv_success } records successfully.| TYPE 'S'.
+      ENDIF.
       IF go_grid IS BOUND.
         go_grid->refresh_table_display( ).
       ENDIF.
@@ -355,9 +390,17 @@ CLASS lcl_report IMPLEMENTATION.
             tabname      = 'NACH'
             varkey       = lv_key.
       ENDLOOP.
-      MESSAGE 'Save failed: Database error occurred.' TYPE 'E'.
+      IF sy-langu = 'D'.
+        MESSAGE 'Sichern fehlgeschlagen: Datenbankfehler aufgetreten.' TYPE 'E'.
+      ELSE.
+        MESSAGE 'Save failed: Database error occurred.' TYPE 'E'.
+      ENDIF.
     ELSE.
-      MESSAGE 'No changes were detected.' TYPE 'S'.
+      IF sy-langu = 'D'.
+        MESSAGE 'Es wurden keine Änderungen festgestellt.' TYPE 'S'.
+      ELSE.
+        MESSAGE 'No changes were detected.' TYPE 'S'.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
@@ -368,32 +411,61 @@ CLASS lcl_report IMPLEMENTATION.
 
     DATA: lt_dropdown TYPE lvc_t_dral.
 
-    " Dropdown handle 1: VSZTP (Sendezeitpunkt)
-    APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Send with job, additional specification' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Send with application own transaction' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
+    IF sy-langu = 'D'.
+      " Dropdown handle 1: VSZTP (Sendezeitpunkt)
+      APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Senden durch periodisch eingeplanten Job' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Senden durch Job mit Zusatzangaben' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Senden durch anwendungseigene Transaktion' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Sofort senden (beim Sichern der Anwendung)' ) TO lt_dropdown.
 
-    " Dropdown handle 2: TDARMOD (Archivierungsmodus)
-    APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Print only' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Archive only' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Print and archive' ) TO lt_dropdown.
+      " Dropdown handle 2: TDARMOD (Archivierungsmodus)
+      APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Nur Drucken' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Nur Archivieren' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Drucken und Archivieren' ) TO lt_dropdown.
 
-    " Dropdown handle 3: NACHA (Sendemedium)
-    APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Print output' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Fax' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '5' int_value = '5 - External send' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Special function' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Events (Workflow)' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Distribution (ALE)' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
+      " Dropdown handle 3: NACHA (Sendemedium)
+      APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Druckausgabe' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Telefax' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '5' int_value = '5 - Externes Senden' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Sonderfunktion' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Ereignis (Workflow)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Verteilung (ALE)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - Externes Senden (Kommunikationsstrategie)' ) TO lt_dropdown.
 
-    " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
-    APPEND VALUE #( handle = 4 value = ' ' int_value = 'Default (Standard)' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
-    APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - No (No cover page)' ) TO lt_dropdown.
+      " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
+      APPEND VALUE #( handle = 4 value = ' ' int_value = 'Standard' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Ja (Deckblatt drucken)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - Nein (Kein Deckblatt)' ) TO lt_dropdown.
+    ELSE.
+      " Dropdown handle 1: VSZTP (Sendezeitpunkt)
+      APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Send with job, additional specification' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Send with application own transaction' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
+
+      " Dropdown handle 2: TDARMOD (Archivierungsmodus)
+      APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Print only' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Archive only' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Print and archive' ) TO lt_dropdown.
+
+      " Dropdown handle 3: NACHA (Sendemedium)
+      APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Print output' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Fax' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '5' int_value = '5 - External send' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Special function' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Events (Workflow)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Distribution (ALE)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
+
+      " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
+      APPEND VALUE #( handle = 4 value = ' ' int_value = 'Default (Standard)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
+      APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - No (No cover page)' ) TO lt_dropdown.
+    ENDIF.
 
     go_grid->set_drop_down_table( it_drop_down_alias = lt_dropdown ).
 
@@ -411,9 +483,15 @@ CLASS lcl_report IMPLEMENTATION.
 
     DATA: ls_fcat TYPE lvc_s_fcat.
     ls_fcat-fieldname = 'VAKEY_DISP'.
-    ls_fcat-scrtext_s = 'Var. Key'.
-    ls_fcat-scrtext_m = 'Variable Key'.
-    ls_fcat-scrtext_l = 'Variable Key'.
+    IF sy-langu = 'D'.
+      ls_fcat-scrtext_s = 'Var. Schl.'.
+      ls_fcat-scrtext_m = 'Variabler Schlüssel'.
+      ls_fcat-scrtext_l = 'Variabler Schlüssel'.
+    ELSE.
+      ls_fcat-scrtext_s = 'Var. Key'.
+      ls_fcat-scrtext_m = 'Variable Key'.
+      ls_fcat-scrtext_l = 'Variable Key'.
+    ENDIF.
     ls_fcat-outputlen = 50.
     ls_fcat-col_pos   = 3.
     APPEND ls_fcat TO lt_fieldcat.
@@ -428,17 +506,25 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-edit     = 'X'.
           <ls_fcat>-checkbox = 'X'.
         WHEN 'VSZTP'.
-          <ls_fcat>-edit      = 'X'.
-          <ls_fcat>-drdn_hndl = '1'.
+          <ls_fcat>-edit       = 'X'.
+          <ls_fcat>-drdn_hndl  = '1'.
+          <ls_fcat>-drdn_alias = 'X'.
+          <ls_fcat>-outputlen  = 45.
         WHEN 'TDARMOD'.
-          <ls_fcat>-edit      = 'X'.
-          <ls_fcat>-drdn_hndl = '2'.
+          <ls_fcat>-edit       = 'X'.
+          <ls_fcat>-drdn_hndl  = '2'.
+          <ls_fcat>-drdn_alias = 'X'.
+          <ls_fcat>-outputlen  = 30.
         WHEN 'NACHA'.
-          <ls_fcat>-edit      = 'X'.
-          <ls_fcat>-drdn_hndl = '3'.
+          <ls_fcat>-edit       = 'X'.
+          <ls_fcat>-drdn_hndl  = '3'.
+          <ls_fcat>-drdn_alias = 'X'.
+          <ls_fcat>-outputlen  = 45.
         WHEN 'TDOCOVER'.
-          <ls_fcat>-edit      = 'X'.
-          <ls_fcat>-drdn_hndl = '4'.
+          <ls_fcat>-edit       = 'X'.
+          <ls_fcat>-drdn_hndl  = '4'.
+          <ls_fcat>-drdn_alias = 'X'.
+          <ls_fcat>-outputlen  = 30.
         WHEN OTHERS.
           <ls_fcat>-edit = abap_false.
       ENDCASE.
@@ -448,7 +534,11 @@ CLASS lcl_report IMPLEMENTATION.
     go_grid->set_ready_for_input( 0 ).
 
     DATA: ls_layout TYPE lvc_s_layo.
-    ls_layout-grid_title = 'Message Condition Records (NACH)'.
+    IF sy-langu = 'D'.
+      ls_layout-grid_title = 'Nachrichten-Konditionssätze (NACH)'.
+    ELSE.
+      ls_layout-grid_title = 'Message Condition Records (NACH)'.
+    ENDIF.
     ls_layout-cwidth_opt = 'X'.
     ls_layout-zebra      = 'X'.
 
