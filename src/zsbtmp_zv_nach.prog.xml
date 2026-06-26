@@ -18,6 +18,12 @@
      <LENGTH>25</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>T02</KEY>
+     <ENTRY>Layout Settings</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Message Condition Maintenance (ZV_NACH for S/4HANA)</ENTRY>
      <LENGTH>51</LENGTH>
@@ -79,6 +85,12 @@
        <ID>I</ID>
        <KEY>T01</KEY>
        <ENTRY>Selektionskriterien</ENTRY>
+       <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>T02</KEY>
+       <ENTRY>Layout-Einstellungen</ENTRY>
        <LENGTH>25</LENGTH>
       </item>
       <item>

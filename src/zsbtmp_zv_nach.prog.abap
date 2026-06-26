@@ -34,8 +34,11 @@ SELECT-OPTIONS: s_kappl FOR nach-kappl,
                 s_ernam FOR nach-ernam,
                 s_erdat FOR nach-erdat,
                 s_knumh FOR nach-knumh.
-PARAMETERS: p_vari TYPE disvariant-variant.
 SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-t02.
+PARAMETERS: p_vari TYPE disvariant-variant.
+SELECTION-SCREEN END OF BLOCK b2.
 
 *---------------------------------------------------------------------*
 * SELECTION SCREEN EVENTS
