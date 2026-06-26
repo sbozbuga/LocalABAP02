@@ -169,7 +169,9 @@ CLASS lcl_report IMPLEMENTATION.
           lr_row_old TYPE REF TO data.
 
     FIELD-SYMBOLS: <ls_row_new> TYPE any,
-                   <ls_row_old> TYPE any.
+                   <ls_row_old> TYPE any,
+                   <lv_val_new> TYPE any,
+                   <lv_val_old> TYPE any.
 
     DATA(lo_struct) = CAST cl_abap_structdescr( cl_abap_typedescr=>describe_by_name( p_tab ) ).
     TRY.
@@ -210,11 +212,11 @@ CLASS lcl_report IMPLEMENTATION.
 
       CASE <ls_dblog>-optype.
         WHEN 'I'.
-          ASSIGN <ls_dblog>-logdata TO <ls_row_new> CASTING.
+          ASSIGN <ls_dblog>-logdata TO <ls_row_new> CASTING TYPE (p_tab).
           IF sy-subrc = 0.
             populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_new> ).
             LOOP AT mt_dfies INTO DATA(ls_field) WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO FIELD-SYMBOL(<lv_val_new>).
+              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
               IF sy-subrc = 0 AND <lv_val_new> IS NOT INITIAL.
                 DATA(ls_out) = init_output_row( <ls_dblog> ).
                 ls_out-fname     = ls_field-fieldname.
@@ -230,11 +232,11 @@ CLASS lcl_report IMPLEMENTATION.
           ENDIF.
 
         WHEN 'D'.
-          ASSIGN <ls_dblog>-logdata TO <ls_row_old> CASTING.
+          ASSIGN <ls_dblog>-logdata TO <ls_row_old> CASTING TYPE (p_tab).
           IF sy-subrc = 0.
             populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
             LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO FIELD-SYMBOL(<lv_val_old>).
+              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
               IF sy-subrc = 0 AND <lv_val_old> IS NOT INITIAL.
                 ls_out = init_output_row( <ls_dblog> ).
                 ls_out-fname     = ls_field-fieldname.
@@ -250,7 +252,7 @@ CLASS lcl_report IMPLEMENTATION.
           ENDIF.
 
         WHEN 'U'.
-          ASSIGN <ls_dblog>-logdata TO <ls_row_old> CASTING.
+          ASSIGN <ls_dblog>-logdata TO <ls_row_old> CASTING TYPE (p_tab).
           IF sy-subrc = 0.
             populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
             get_next_row(
@@ -262,9 +264,9 @@ CLASS lcl_report IMPLEMENTATION.
                 cr_row_new    = lr_row_new ).
 
             LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO FIELD-SYMBOL(<lv_val_old>).
+              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
               IF sy-subrc = 0.
-                ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO FIELD-SYMBOL(<lv_val_new>).
+                ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
                 IF sy-subrc = 0.
                   IF <lv_val_old> <> <lv_val_new>.
                     ls_out = init_output_row( <ls_dblog> ).
@@ -330,7 +332,7 @@ CLASS lcl_report IMPLEMENTATION.
 
     READ TABLE it_dbtablog INTO DATA(ls_next) INDEX id_tabix_next.
     IF sy-subrc = 0 AND ls_next-logkey = is_dbtablog-logkey.
-      ASSIGN ls_next-logdata TO <ls_row_new> CASTING.
+      ASSIGN ls_next-logdata TO <ls_row_new> CASTING TYPE (is_dbtablog-tabname).
       IF sy-subrc = 0.
         populate_key_fields( EXPORTING is_dblog = ls_next CHANGING cs_row = <ls_row_new> ).
         RETURN.
@@ -348,7 +350,7 @@ CLASS lcl_report IMPLEMENTATION.
     IF sy-subrc = 0.
       READ TABLE lt_next_logs INTO DATA(ls_next_db) INDEX 1.
       IF sy-subrc = 0.
-        ASSIGN ls_next_db-logdata TO <ls_row_new> CASTING.
+        ASSIGN ls_next_db-logdata TO <ls_row_new> CASTING TYPE (is_dbtablog-tabname).
         IF sy-subrc = 0.
           populate_key_fields( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
           RETURN.
@@ -366,7 +368,7 @@ CLASS lcl_report IMPLEMENTATION.
         CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
         ASSIGN lr_row_old->* TO <ls_row_old>.
         IF sy-subrc = 0.
-          ASSIGN is_dbtablog-logdata TO <ls_row_old> CASTING.
+          ASSIGN is_dbtablog-logdata TO <ls_row_old> CASTING TYPE (is_dbtablog-tabname).
           IF sy-subrc = 0.
             populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
           ELSE.
