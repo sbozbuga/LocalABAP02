@@ -15,7 +15,7 @@ TYPE-POOLS: icon.
 *---------------------------------------------------------------------*
 TYPES: BEGIN OF ty_output.
          INCLUDE STRUCTURE nach.
-TYPES:   vakey TYPE char100,
+TYPES:   vakey_disp TYPE char100,
        END OF ty_output.
 
 DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
@@ -269,7 +269,7 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_out>).
-      <ls_out>-vakey = lcl_vakey_builder=>get_vakey(
+      <ls_out>-vakey_disp = lcl_vakey_builder=>get_vakey(
         iv_kotabnr = <ls_out>-kotabnr
         iv_knumh   = <ls_out>-knumh ).
     ENDLOOP.
@@ -419,7 +419,7 @@ CLASS lcl_report IMPLEMENTATION.
             OTHERS                 = 3.
 
         DATA: ls_fcat TYPE lvc_s_fcat.
-        ls_fcat-fieldname = 'VAKEY'.
+        ls_fcat-fieldname = 'VAKEY_DISP'.
         ls_fcat-scrtext_s = 'Var. Key'.
         ls_fcat-scrtext_m = 'Variable Key'.
         ls_fcat-scrtext_l = 'Variable Key'.
@@ -429,6 +429,8 @@ CLASS lcl_report IMPLEMENTATION.
 
         LOOP AT lt_fieldcat ASSIGNING FIELD-SYMBOL(<ls_fcat>).
           CASE <ls_fcat>-fieldname.
+            WHEN 'VAKEY'.
+              <ls_fcat>-edit   = abap_false.
             WHEN 'ANZAL' OR 'PFLD4' OR 'LDEST' OR 'DSNAM' OR 'DSUF1' OR 'DSUF2'.
               <ls_fcat>-edit = 'X'.
             WHEN 'DIMME' OR 'DELET'.
