@@ -673,6 +673,25 @@ CLASS lcl_report IMPLEMENTATION.
 ENDCLASS.
 
 *---------------------------------------------------------------------*
+* INITIALIZATION
+*---------------------------------------------------------------------*
+INITIALIZATION.
+  DATA: ls_default_variant TYPE disvariant.
+  CLEAR ls_default_variant.
+  ls_default_variant-report = sy-repid.
+  CALL FUNCTION 'REUSE_ALV_VARIANT_DEFAULT_GET'
+    EXPORTING
+      i_save     = 'A'
+    CHANGING
+      cs_variant = ls_default_variant
+    EXCEPTIONS
+      not_found  = 1
+      OTHERS     = 2.
+  IF sy-subrc = 0.
+    p_vari = ls_default_variant-variant.
+  ENDIF.
+
+*---------------------------------------------------------------------*
 * START-OF-SELECTION
 *---------------------------------------------------------------------*
 START-OF-SELECTION.
