@@ -60,7 +60,7 @@ CLASS lcl_usr05_log_decoder IMPLEMENTATION.
     rs_data-bname = is_dbtablog-logkey+3(12).
     rs_data-parid = is_dbtablog-logkey+15(20).
 
-    IF is_dbtablog-logdata IS INITIAL.
+    IF is_dbtablog-logdata IS INITIAL OR is_dbtablog-dataln <= 0.
       RETURN.
     ENDIF.
 
@@ -83,10 +83,11 @@ CLASS lcl_usr05_log_decoder IMPLEMENTATION.
     ENDIF.
 
     TRY.
+        DATA(lv_len_bytes) = CONV i( is_dbtablog-dataln ).
         DATA(lo_conv) = cl_abap_conv_in_ce=>create(
           encoding = lv_codepage
           endian   = 'B'
-          input    = is_dbtablog-logdata ).
+          input    = is_dbtablog-logdata(lv_len_bytes) ).
 
         DATA: lv_buffer TYPE string.
         lo_conv->read( IMPORTING data = lv_buffer ).
@@ -362,7 +363,7 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_next_logs TYPE tt_dbtablog.
 
     " 2. Try next entry in database (retrieve strictly newer changes, up to 1 row)
-    SELECT logkey, logdata, versno
+    SELECT logkey, dataln, logdata, versno
       FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logkey  = @is_dbtablog-logkey
