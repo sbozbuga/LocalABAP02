@@ -430,9 +430,7 @@ CLASS lcl_report IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    IF line_exists( mt_dfies[ fieldname = 'MANDT' ] ).
-      APPEND |MANDT = '{ sy-mandt }'| TO lt_where.
-    ENDIF.
+
 
     CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
 
