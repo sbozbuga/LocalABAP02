@@ -436,12 +436,14 @@ CLASS lcl_report IMPLEMENTATION.
 
     CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
 
-    DATA: lt_select_fields TYPE STANDARD TABLE OF string.
+    DATA: lt_select_fields TYPE STANDARD TABLE OF string,
+          lv_select_list   TYPE string.
     LOOP AT mt_dfies INTO DATA(ls_df_sel).
       APPEND ls_df_sel-fieldname TO lt_select_fields.
     ENDLOOP.
+    CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
 
-    SELECT SINGLE (lt_select_fields) FROM (is_dbtablog-tabname)
+    SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
       WHERE (lv_where)
       INTO @<ls_row_new>.
     IF sy-subrc <> 0.
