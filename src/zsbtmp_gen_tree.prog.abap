@@ -104,13 +104,14 @@ CLASS lcl_report DEFINITION FINAL.
 
   PRIVATE SECTION.
     CLASS-DATA:
-      mt_all_logs TYPE STANDARD TABLE OF ty_output,
-      mt_grid_log TYPE STANDARD TABLE OF ty_output,
-      mt_node_map TYPE STANDARD TABLE OF ty_node_map,
-      mt_dfies    TYPE ddfields,
-      it_nodes    TYPE ty_it_nodes,
-      go_alv      TYPE REF TO cl_salv_table,
-      go_tree     TYPE REF TO cl_gui_simple_tree.
+      mt_all_logs  TYPE STANDARD TABLE OF ty_output,
+      mt_grid_log  TYPE STANDARD TABLE OF ty_output,
+      mt_node_map  TYPE STANDARD TABLE OF ty_node_map,
+      mt_dfies     TYPE ddfields,
+      gt_codepages TYPE STANDARD TABLE OF prv_log_cp,
+      it_nodes     TYPE ty_it_nodes,
+      go_alv       TYPE REF TO cl_salv_table,
+      go_tree      TYPE REF TO cl_gui_simple_tree.
 
     CLASS-METHODS:
       get_data,
@@ -136,6 +137,11 @@ CLASS lcl_report DEFINITION FINAL.
         CHANGING
           cr_row_new    TYPE REF TO data,
       populate_key_fields
+        IMPORTING
+          is_dblog TYPE dbtablog
+        CHANGING
+          cs_row   TYPE any,
+      decode_row
         IMPORTING
           is_dblog TYPE dbtablog
         CHANGING
@@ -219,6 +225,13 @@ CLASS lcl_report IMPLEMENTATION.
         ENDIF.
     ENDTRY.
 
+    IF gt_codepages IS INITIAL.
+      SELECT migdate, migtime, codepage FROM prv_log_cp INTO CORRESPONDING FIELDS OF TABLE @gt_codepages.
+      IF sy-subrc = 0.
+        SORT gt_codepages BY migdate migtime.
+      ENDIF.
+    ENDIF.
+
     SELECT * FROM dbtablog
       WHERE tabname  = @p_tab
         AND logdate  IN @s_logdat
@@ -247,110 +260,107 @@ CLASS lcl_report IMPLEMENTATION.
 
       CASE <ls_dblog>-optype.
         WHEN 'I'.
-          ASSIGN <ls_dblog>-logdata TO <ls_data_cast> CASTING TYPE (p_tab).
-          IF sy-subrc = 0.
-            <ls_row_new> = <ls_data_cast>.
-            populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_new> ).
-            LOOP AT mt_dfies INTO DATA(ls_field) WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
-              IF sy-subrc = 0.
-                lv_new_val_str = |{ <lv_val_new> }|.
-                REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
-                CONDENSE lv_new_val_str.
-                IF lv_new_val_str IS NOT INITIAL.
-                  DATA(ls_out) = init_output_row( <ls_dblog> ).
-                  ls_out-fname     = ls_field-fieldname.
-                  ls_out-ftext     = ls_field-fieldtext.
-                  ls_out-value_old = ''.
-                  ls_out-value_new = lv_new_val_str.
-                  ls_out-icon      = icon_create.
-                  APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
-                  ls_out-key_disp  = build_key_disp( <ls_row_new> ).
-                  APPEND ls_out TO mt_all_logs.
-                ENDIF.
+          CLEAR <ls_row_new>.
+          populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_new> ).
+          decode_row( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_new> ).
+
+          LOOP AT mt_dfies INTO DATA(ls_field) WHERE keyflag = ' '.
+            ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
+            IF sy-subrc = 0.
+              lv_new_val_str = |{ <lv_val_new> }|.
+              REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
+              CONDENSE lv_new_val_str.
+              IF lv_new_val_str IS NOT INITIAL.
+                DATA(ls_out) = init_output_row( <ls_dblog> ).
+                ls_out-fname     = ls_field-fieldname.
+                ls_out-ftext     = ls_field-fieldtext.
+                ls_out-value_old = ''.
+                ls_out-value_new = lv_new_val_str.
+                ls_out-icon      = icon_create.
+                APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
+                ls_out-key_disp  = build_key_disp( <ls_row_new> ).
+                APPEND ls_out TO mt_all_logs.
               ENDIF.
-            ENDLOOP.
-          ENDIF.
+            ENDIF.
+          ENDLOOP.
 
         WHEN 'D'.
-          ASSIGN <ls_dblog>-logdata TO <ls_data_cast> CASTING TYPE (p_tab).
-          IF sy-subrc = 0.
-            <ls_row_old> = <ls_data_cast>.
-            populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
-            LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
+          CLEAR <ls_row_old>.
+          populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
+          decode_row( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
+
+          LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
+            ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
+            IF sy-subrc = 0.
+              lv_old_val_str = |{ <lv_val_old> }|.
+              REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
+              CONDENSE lv_old_val_str.
+              IF lv_old_val_str IS NOT INITIAL.
+                ls_out = init_output_row( <ls_dblog> ).
+                ls_out-fname     = ls_field-fieldname.
+                ls_out-ftext     = ls_field-fieldtext.
+                ls_out-value_old = lv_old_val_str.
+                ls_out-value_new = ''.
+                ls_out-icon      = icon_delete.
+                APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
+                ls_out-key_disp  = build_key_disp( <ls_row_old> ).
+                APPEND ls_out TO mt_all_logs.
+              ENDIF.
+            ENDIF.
+          ENDLOOP.
+
+        WHEN 'U'.
+          CLEAR <ls_row_old>.
+          populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
+          decode_row( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
+
+          get_next_row(
+            EXPORTING
+              is_dbtablog   = <ls_dblog>
+              id_tabix_next = lv_tabix + 1
+              it_dbtablog   = lt_dblog
+            CHANGING
+              cr_row_new    = lr_row_new ).
+
+          LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
+            ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
+            IF sy-subrc = 0.
+              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
               IF sy-subrc = 0.
                 lv_old_val_str = |{ <lv_val_old> }|.
                 REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
                 CONDENSE lv_old_val_str.
-                IF lv_old_val_str IS NOT INITIAL.
+
+                lv_new_val_str = |{ <lv_val_new> }|.
+                REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
+                CONDENSE lv_new_val_str.
+
+                IF lv_old_val_str IS INITIAL AND lv_new_val_str IS INITIAL.
+                  CONTINUE.
+                ENDIF.
+
+                IF p_real = abap_true AND lv_old_val_str = lv_new_val_str.
+                  CONTINUE.
+                ENDIF.
+
+                IF lv_old_val_str <> lv_new_val_str OR p_real = abap_false.
                   ls_out = init_output_row( <ls_dblog> ).
                   ls_out-fname     = ls_field-fieldname.
                   ls_out-ftext     = ls_field-fieldtext.
                   ls_out-value_old = lv_old_val_str.
-                  ls_out-value_new = ''.
-                  ls_out-icon      = icon_delete.
-                  APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
+                  ls_out-value_new = lv_new_val_str.
+                  ls_out-icon      = icon_change.
+
+                  IF lv_old_val_str <> lv_new_val_str.
+                    APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 6 int = 1 ) ) TO ls_out-color.
+                    APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
+                  ENDIF.
                   ls_out-key_disp  = build_key_disp( <ls_row_old> ).
                   APPEND ls_out TO mt_all_logs.
                 ENDIF.
               ENDIF.
-            ENDLOOP.
-          ENDIF.
-
-        WHEN 'U'.
-          ASSIGN <ls_dblog>-logdata TO <ls_data_cast> CASTING TYPE (p_tab).
-          IF sy-subrc = 0.
-            <ls_row_old> = <ls_data_cast>.
-            populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
-            get_next_row(
-              EXPORTING
-                is_dbtablog   = <ls_dblog>
-                id_tabix_next = lv_tabix + 1
-                it_dbtablog   = lt_dblog
-              CHANGING
-                cr_row_new    = lr_row_new ).
-
-            LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
-              ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
-              IF sy-subrc = 0.
-                ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
-                IF sy-subrc = 0.
-                  lv_old_val_str = |{ <lv_val_old> }|.
-                  REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
-                  CONDENSE lv_old_val_str.
-
-                  lv_new_val_str = |{ <lv_val_new> }|.
-                  REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
-                  CONDENSE lv_new_val_str.
-
-                  IF lv_old_val_str IS INITIAL AND lv_new_val_str IS INITIAL.
-                    CONTINUE.
-                  ENDIF.
-
-                  IF p_real = abap_true AND lv_old_val_str = lv_new_val_str.
-                    CONTINUE.
-                  ENDIF.
-
-                  IF lv_old_val_str <> lv_new_val_str OR p_real = abap_false.
-                    ls_out = init_output_row( <ls_dblog> ).
-                    ls_out-fname     = ls_field-fieldname.
-                    ls_out-ftext     = ls_field-fieldtext.
-                    ls_out-value_old = lv_old_val_str.
-                    ls_out-value_new = lv_new_val_str.
-                    ls_out-icon      = icon_change.
-
-                    IF lv_old_val_str <> lv_new_val_str.
-                      APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 6 int = 1 ) ) TO ls_out-color.
-                      APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
-                    ENDIF.
-                    ls_out-key_disp  = build_key_disp( <ls_row_old> ).
-                    APPEND ls_out TO mt_all_logs.
-                  ENDIF.
-                ENDIF.
-              ENDIF.
-            ENDLOOP.
-          ENDIF.
+            ENDIF.
+          ENDLOOP.
       ENDCASE.
     ENDLOOP.
   ENDMETHOD.
@@ -388,23 +398,33 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_next_row.
-    FIELD-SYMBOLS: <ls_row_new>   TYPE any,
-                   <ls_data_cast> TYPE any.
+    DATA: lt_next_logs     TYPE STANDARD TABLE OF dbtablog,
+          ls_next          TYPE dbtablog,
+          ls_next_db       TYPE dbtablog,
+          lt_where         TYPE STANDARD TABLE OF string,
+          lv_where         TYPE string,
+          lr_row_old       TYPE REF TO data,
+          lt_select_fields TYPE STANDARD TABLE OF string,
+          lv_select_list   TYPE string,
+          ls_df            TYPE dfies,
+          ls_df_sel        TYPE dfies,
+          lv_val_str       TYPE string.
+
+    FIELD-SYMBOLS: <ls_row_new> TYPE any,
+                   <ls_row_old> TYPE any,
+                   <lv_val>     TYPE any.
+
     ASSIGN cr_row_new->* TO <ls_row_new>.
     CLEAR <ls_row_new>.
 
-    READ TABLE it_dbtablog INTO DATA(ls_next) INDEX id_tabix_next.
+    READ TABLE it_dbtablog INTO ls_next INDEX id_tabix_next.
     IF sy-subrc = 0 AND ls_next-logkey = is_dbtablog-logkey.
-      ASSIGN ls_next-logdata TO <ls_data_cast> CASTING TYPE (is_dbtablog-tabname).
-      IF sy-subrc = 0.
-        <ls_row_new> = <ls_data_cast>.
-        populate_key_fields( EXPORTING is_dblog = ls_next CHANGING cs_row = <ls_row_new> ).
-        RETURN.
-      ENDIF.
+      populate_key_fields( EXPORTING is_dblog = ls_next CHANGING cs_row = <ls_row_new> ).
+      decode_row( EXPORTING is_dblog = ls_next CHANGING cs_row = <ls_row_new> ).
+      RETURN.
     ENDIF.
 
-    DATA: lt_next_logs TYPE STANDARD TABLE OF dbtablog.
-    SELECT dataln, logdata FROM dbtablog
+    SELECT dataln, logdata, versno, logkey FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logkey  = @is_dbtablog-logkey
         AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
@@ -412,34 +432,20 @@ CLASS lcl_report IMPLEMENTATION.
       INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs
       UP TO 1 ROWS.
     IF sy-subrc = 0.
-      READ TABLE lt_next_logs INTO DATA(ls_next_db) INDEX 1.
+      READ TABLE lt_next_logs INTO ls_next_db INDEX 1.
       IF sy-subrc = 0.
-        ASSIGN ls_next_db-logdata TO <ls_data_cast> CASTING TYPE (is_dbtablog-tabname).
-        IF sy-subrc = 0.
-          <ls_row_new> = <ls_data_cast>.
-          populate_key_fields( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
-          RETURN.
-        ENDIF.
+        populate_key_fields( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
+        decode_row( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
+        RETURN.
       ENDIF.
     ENDIF.
-
-    DATA: lt_where   TYPE STANDARD TABLE OF string,
-          lv_where   TYPE string,
-          lr_row_old TYPE REF TO data.
-
-    FIELD-SYMBOLS: <ls_row_old> TYPE any.
 
     TRY.
         CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
         ASSIGN lr_row_old->* TO <ls_row_old>.
         IF sy-subrc = 0.
-          ASSIGN is_dbtablog-logdata TO <ls_data_cast> CASTING TYPE (is_dbtablog-tabname).
-          IF sy-subrc = 0.
-            <ls_row_old> = <ls_data_cast>.
-            populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-          ELSE.
-            RETURN.
-          ENDIF.
+          populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+          decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
         ELSE.
           RETURN.
         ENDIF.
@@ -447,22 +453,18 @@ CLASS lcl_report IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
-    LOOP AT mt_dfies INTO DATA(ls_df) WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
-      ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO FIELD-SYMBOL(<lv_val>).
+    LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
+      ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
       IF sy-subrc = 0.
-        DATA(lv_val_str) = |{ <lv_val> }|.
+        lv_val_str = |{ <lv_val> }|.
         REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
         APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
       ENDIF.
     ENDLOOP.
 
-
-
     CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
 
-    DATA: lt_select_fields TYPE STANDARD TABLE OF string,
-          lv_select_list   TYPE string.
-    LOOP AT mt_dfies INTO DATA(ls_df_sel).
+    LOOP AT mt_dfies INTO ls_df_sel.
       APPEND ls_df_sel-fieldname TO lt_select_fields.
     ENDLOOP.
     CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
@@ -663,6 +665,126 @@ CLASS lcl_report IMPLEMENTATION.
         ENDIF.
       ENDIF.
       lv_offset = lv_offset + ls_df-leng.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD decode_row.
+    DATA: lr_conv         TYPE REF TO cl_abap_conv_in_ce,
+          ld_offset       TYPE i,
+          ld_add          TYPE i,
+          ld_xstr         TYPE xstring,
+          lv_tabkeylen    TYPE i VALUE 0,
+          lv_encoding     TYPE abap_encod,
+          lv_loop_subrc   LIKE sy-subrc,
+          ls_first_nonkey TYPE dfies,
+          ls_cp           TYPE prv_log_cp,
+          ls_df_dec       TYPE dfies,
+          lv_str_offset   TYPE sap_int4,
+          lv_str_length   TYPE sap_int4,
+          lv_versno       TYPE i.
+
+    FIELD-SYMBOLS: <lv_field> TYPE any.
+
+    IF is_dblog-logdata IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Calculate key length if we are dealing with a pre-Unicode log (versno < '01')
+    IF is_dblog-versno < '01'.
+      READ TABLE mt_dfies INTO ls_first_nonkey WITH KEY keyflag = ' '.
+      IF sy-subrc = 0.
+        lv_tabkeylen = ls_first_nonkey-offset.
+      ENDIF.
+    ENDIF.
+
+    " Determine the appropriate raw buffer encoding using standard SAP lookup logic
+    CALL FUNCTION 'SCP_GET_CODEPAGE_NUMBER'
+      IMPORTING
+        appl_codepage = lv_encoding
+      EXCEPTIONS
+        others        = 2.
+
+    LOOP AT gt_codepages INTO ls_cp
+      WHERE migdate > is_dblog-logdate OR
+            ( migdate = is_dblog-logdate AND migtime > is_dblog-logtime ).
+      EXIT.
+    ENDLOOP.
+    lv_loop_subrc = sy-subrc.
+
+    IF is_dblog-versno = '' AND lv_loop_subrc <> 0.
+      lv_encoding = 'NON-UNICODE'.
+    ELSEIF is_dblog-versno = '02'.
+      lv_encoding = '4102'.
+    ELSEIF lv_loop_subrc = 0.
+      lv_encoding = ls_cp-codepage.
+    ENDIF.
+
+    TRY.
+        lr_conv = cl_abap_conv_in_ce=>create(
+             encoding    = lv_encoding
+             endian      = 'B'
+             ignore_cerr = abap_true
+             input       = is_dblog-logdata ).
+      CATCH cx_root.
+        RETURN.
+    ENDTRY.
+
+    LOOP AT mt_dfies INTO ls_df_dec WHERE keyflag = ' ' AND datatype <> 'STRU' AND inttype IS NOT INITIAL.
+      ASSIGN COMPONENT ls_df_dec-fieldname OF STRUCTURE cs_row TO <lv_field>.
+      IF sy-subrc = 0.
+        " Adjust offset by subtracting tabkeylen for pre-Unicode logs
+        IF is_dblog-versno >= '01'.
+          ld_offset = ls_df_dec-offset.
+        ELSE.
+          ld_offset = ls_df_dec-offset - lv_tabkeylen.
+        ENDIF.
+
+        IF ld_offset LT lr_conv->position.
+          ld_xstr = lr_conv->get_buffer( ).
+          lr_conv->reset( input = ld_xstr ).
+        ENDIF.
+
+        TRY.
+            IF ld_offset NE lr_conv->position.
+              ld_add = ld_offset - lr_conv->position.
+              lr_conv->skip_x( n = ld_add ).
+            ENDIF.
+
+            " Standard dynamic decoding for string/xstring vs elementary types
+            IF ls_df_dec-inttype CA 'gy'.
+              lr_conv->read( IMPORTING data = lv_str_offset ).
+              lr_conv->read( IMPORTING data = lv_str_length ).
+
+              ld_add = lv_str_offset - lr_conv->position.
+              lr_conv->skip_x( n = ld_add ).
+
+              IF is_dblog-versno IS NOT INITIAL AND is_dblog-versno CO '0123456789'.
+                lv_versno = is_dblog-versno.
+              ELSE.
+                lv_versno = 1.
+              ENDIF.
+              IF lv_versno <= 0.
+                lv_versno = 1.
+              ENDIF.
+
+              IF lv_versno >= 2.
+                ld_add = lv_str_length DIV lv_versno.
+              ELSE.
+                ld_add = lv_str_length.
+              ENDIF.
+
+              lr_conv->read( EXPORTING n    = ld_add
+                             IMPORTING data = <lv_field> ).
+
+              " Reset read position back to after the string header pointer
+              ld_xstr = lr_conv->get_buffer( ).
+              lr_conv->reset( input = ld_xstr ).
+            ELSE.
+              lr_conv->read( IMPORTING data = <lv_field> ).
+            ENDIF.
+          CATCH cx_root.
+        ENDTRY.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
