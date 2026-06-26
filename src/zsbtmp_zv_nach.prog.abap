@@ -4,7 +4,7 @@
 *& Maintenance program for message condition records (NACH) in S/4HANA
 *& Rebuilds the VAKEY field dynamically from the condition tables Bxxx
 *&---------------------------------------------------------------------*
-REPORT zsbtmp_zv_nach.
+REPORT zsbtmp_zv_nach NO STANDARD PAGE HEADING.
 
 TABLES: nach.
 
@@ -15,7 +15,11 @@ TYPE-POOLS: icon.
 *---------------------------------------------------------------------*
 TYPES: BEGIN OF ty_output.
          INCLUDE STRUCTURE nach.
-TYPES:   vakey_disp TYPE char100,
+TYPES:   vakey_disp    TYPE char100,
+         vsztp_disp    TYPE char50,
+         tdarmod_disp  TYPE char50,
+         nacha_disp    TYPE char50,
+         tdocover_disp TYPE char50,
        END OF ty_output.
 
 DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
@@ -299,6 +303,10 @@ CLASS lcl_report IMPLEMENTATION.
       <ls_out>-vakey_disp = lcl_vakey_builder=>get_vakey(
         iv_kotabnr = <ls_out>-kotabnr
         iv_knumh   = <ls_out>-knumh ).
+      <ls_out>-vsztp_disp    = <ls_out>-vsztp.
+      <ls_out>-tdarmod_disp  = <ls_out>-tdarmod.
+      <ls_out>-nacha_disp    = <ls_out>-nacha.
+      <ls_out>-tdocover_disp = <ls_out>-tdocover.
     ENDLOOP.
 
     gt_original = gt_output.
@@ -308,6 +316,13 @@ CLASS lcl_report IMPLEMENTATION.
     IF go_grid IS BOUND.
       go_grid->check_changed_data( ).
     ENDIF.
+
+    LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_out_save>).
+      <ls_out_save>-vsztp    = <ls_out_save>-vsztp_disp.
+      <ls_out_save>-tdarmod  = <ls_out_save>-tdarmod_disp.
+      <ls_out_save>-nacha    = <ls_out_save>-nacha_disp.
+      <ls_out_save>-tdocover = <ls_out_save>-tdocover_disp.
+    ENDLOOP.
 
     DATA: lt_locked_keys TYPE STANDARD TABLE OF rstable-varkey,
           lv_success     TYPE i,
@@ -510,25 +525,33 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-edit     = 'X'.
           <ls_fcat>-checkbox = 'X'.
         WHEN 'VSZTP'.
+          <ls_fcat>-fieldname  = 'VSZTP_DISP'.
           <ls_fcat>-edit       = 'X'.
           <ls_fcat>-drdn_hndl  = '1'.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 45.
+          <ls_fcat>-intlen     = 50.
         WHEN 'TDARMOD'.
+          <ls_fcat>-fieldname  = 'TDARMOD_DISP'.
           <ls_fcat>-edit       = 'X'.
           <ls_fcat>-drdn_hndl  = '2'.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 30.
+          <ls_fcat>-intlen     = 50.
         WHEN 'NACHA'.
+          <ls_fcat>-fieldname  = 'NACHA_DISP'.
           <ls_fcat>-edit       = 'X'.
           <ls_fcat>-drdn_hndl  = '3'.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 45.
+          <ls_fcat>-intlen     = 50.
         WHEN 'TDOCOVER'.
+          <ls_fcat>-fieldname  = 'TDOCOVER_DISP'.
           <ls_fcat>-edit       = 'X'.
           <ls_fcat>-drdn_hndl  = '4'.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 30.
+          <ls_fcat>-intlen     = 50.
         WHEN OTHERS.
           <ls_fcat>-edit = abap_false.
       ENDCASE.
