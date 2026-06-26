@@ -190,18 +190,18 @@ CLASS lcl_event_handler IMPLEMENTATION.
           lv_qinfo_edit TYPE string.
 
     IF sy-langu = 'D'.
-      lv_txt_disp   = 'Anzeigemodus'.
+      lv_txt_disp   = 'Anzeigen'.
       lv_qinfo_disp = 'In den Anzeigemodus wechseln'.
       lv_txt_save   = 'Sichern'.
       lv_qinfo_save = 'Änderungen sichern'.
-      lv_txt_edit   = 'Änderungsmodus'.
+      lv_txt_edit   = 'Ändern'.
       lv_qinfo_edit = 'In den Änderungsmodus wechseln'.
     ELSE.
-      lv_txt_disp   = 'Display Mode'.
+      lv_txt_disp   = 'Display'.
       lv_qinfo_disp = 'Switch to Display Mode'.
       lv_txt_save   = 'Save'.
       lv_qinfo_save = 'Save Changes'.
-      lv_txt_edit   = 'Edit Mode'.
+      lv_txt_edit   = 'Edit'.
       lv_qinfo_edit = 'Switch to Edit Mode'.
     ENDIF.
 
