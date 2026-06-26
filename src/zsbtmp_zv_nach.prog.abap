@@ -497,6 +497,10 @@ CLASS lcl_report IMPLEMENTATION.
     APPEND ls_fcat TO lt_fieldcat.
 
     LOOP AT lt_fieldcat ASSIGNING FIELD-SYMBOL(<ls_fcat>).
+      IF <ls_fcat>-rollname CP 'NA_OBS*'.
+        <ls_fcat>-no_out = 'X'.
+      ENDIF.
+
       CASE <ls_fcat>-fieldname.
         WHEN 'VAKEY'.
           <ls_fcat>-edit   = abap_false.
