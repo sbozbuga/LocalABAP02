@@ -20,7 +20,6 @@ TYPES:   vakey_disp TYPE char100,
 
 DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
       gt_original  TYPE STANDARD TABLE OF ty_output,
-      go_dock      TYPE REF TO cl_gui_docking_container,
       go_grid      TYPE REF TO cl_gui_alv_grid,
       gv_edit_mode TYPE abap_bool.
 
@@ -35,10 +34,6 @@ SELECT-OPTIONS: s_kappl FOR nach-kappl,
                 s_erdat FOR nach-erdat,
                 s_knumh FOR nach-knumh.
 SELECTION-SCREEN END OF BLOCK b1.
-
-* Empty selection screen to host the ALV grid docking container
-SELECTION-SCREEN BEGIN OF SCREEN 100.
-SELECTION-SCREEN END OF SCREEN 100.
 
 *---------------------------------------------------------------------*
 * CLASS lcl_vakey_builder DEFINITION
@@ -179,7 +174,7 @@ CLASS lcl_report DEFINITION FINAL.
       run,
       get_data,
       save_data,
-      pbo_100.
+      display_alv.
 ENDCLASS.
 
 *---------------------------------------------------------------------*
@@ -247,12 +242,15 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF go_dock IS BOUND.
-      go_dock->free( ).
-      CLEAR: go_dock, go_grid.
+    IF go_grid IS BOUND.
+      go_grid->free( ).
+      CLEAR go_grid.
     ENDIF.
 
-    CALL SELECTION-SCREEN 100.
+    display_alv( ).
+
+    cl_abap_list_layout=>suppress_toolbar( ).
+    WRITE space.
   ENDMETHOD.
 
   METHOD get_data.
@@ -363,135 +361,116 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD pbo_100.
-    IF sy-dynnr = '0100'.
-      IF go_dock IS INITIAL.
-        CREATE OBJECT go_dock
-          EXPORTING
-            repid     = sy-repid
-            dynnr     = sy-dynnr
-            side      = cl_gui_docking_container=>dock_at_left
-            extension = 9999.
+  METHOD display_alv.
+    CREATE OBJECT go_grid
+      EXPORTING
+        i_parent = cl_gui_container=>default_screen.
 
-        CREATE OBJECT go_grid
-          EXPORTING
-            i_parent = go_dock.
+    DATA: lt_dropdown TYPE lvc_t_dral.
 
-        DATA: lt_dropdown TYPE lvc_t_dral.
+    " Dropdown handle 1: VSZTP (Sendezeitpunkt)
+    APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Send with job, additional specification' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Send with application own transaction' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
 
-        " Dropdown handle 1: VSZTP (Sendezeitpunkt)
-        APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Send with job, additional specification' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Send with application own transaction' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
+    " Dropdown handle 2: TDARMOD (Archivierungsmodus)
+    APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Print only' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Archive only' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Print and archive' ) TO lt_dropdown.
 
-        " Dropdown handle 2: TDARMOD (Archivierungsmodus)
-        APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Print only' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Archive only' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Print and archive' ) TO lt_dropdown.
+    " Dropdown handle 3: NACHA (Sendemedium)
+    APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Print output' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Fax' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '5' int_value = '5 - External send' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Special function' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Events (Workflow)' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Distribution (ALE)' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
 
-        " Dropdown handle 3: NACHA (Sendemedium)
-        APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Print output' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Fax' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '5' int_value = '5 - External send' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Special function' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Events (Workflow)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Distribution (ALE)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
+    " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
+    APPEND VALUE #( handle = 4 value = ' ' int_value = 'Default (Standard)' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
+    APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - No (No cover page)' ) TO lt_dropdown.
 
-        " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
-        APPEND VALUE #( handle = 4 value = ' ' int_value = 'Default (Standard)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - No (No cover page)' ) TO lt_dropdown.
+    go_grid->set_drop_down_table( it_drop_down_alias = lt_dropdown ).
 
-        go_grid->set_drop_down_table( it_drop_down_alias = lt_dropdown ).
+    DATA: lt_fieldcat TYPE lvc_t_fcat.
+    CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
+      EXPORTING
+        i_structure_name       = 'NACH'
+        i_bypassing_buffer     = 'X'
+      CHANGING
+        ct_fieldcat            = lt_fieldcat
+      EXCEPTIONS
+        inconsistent_interface = 1
+        program_error          = 2
+        OTHERS                 = 3.
 
-        DATA: lt_fieldcat TYPE lvc_t_fcat.
-        CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
-          EXPORTING
-            i_structure_name       = 'NACH'
-            i_bypassing_buffer     = 'X'
-          CHANGING
-            ct_fieldcat            = lt_fieldcat
-          EXCEPTIONS
-            inconsistent_interface = 1
-            program_error          = 2
-            OTHERS                 = 3.
+    DATA: ls_fcat TYPE lvc_s_fcat.
+    ls_fcat-fieldname = 'VAKEY_DISP'.
+    ls_fcat-scrtext_s = 'Var. Key'.
+    ls_fcat-scrtext_m = 'Variable Key'.
+    ls_fcat-scrtext_l = 'Variable Key'.
+    ls_fcat-outputlen = 50.
+    ls_fcat-col_pos   = 3.
+    APPEND ls_fcat TO lt_fieldcat.
 
-        DATA: ls_fcat TYPE lvc_s_fcat.
-        ls_fcat-fieldname = 'VAKEY_DISP'.
-        ls_fcat-scrtext_s = 'Var. Key'.
-        ls_fcat-scrtext_m = 'Variable Key'.
-        ls_fcat-scrtext_l = 'Variable Key'.
-        ls_fcat-outputlen = 50.
-        ls_fcat-col_pos   = 3.
-        APPEND ls_fcat TO lt_fieldcat.
+    LOOP AT lt_fieldcat ASSIGNING FIELD-SYMBOL(<ls_fcat>).
+      CASE <ls_fcat>-fieldname.
+        WHEN 'VAKEY'.
+          <ls_fcat>-edit   = abap_false.
+        WHEN 'ANZAL' OR 'PFLD4' OR 'LDEST' OR 'DSNAM' OR 'DSUF1' OR 'DSUF2'.
+          <ls_fcat>-edit = 'X'.
+        WHEN 'DIMME' OR 'DELET'.
+          <ls_fcat>-edit     = 'X'.
+          <ls_fcat>-checkbox = 'X'.
+        WHEN 'VSZTP'.
+          <ls_fcat>-edit      = 'X'.
+          <ls_fcat>-drdn_hndl = '1'.
+        WHEN 'TDARMOD'.
+          <ls_fcat>-edit      = 'X'.
+          <ls_fcat>-drdn_hndl = '2'.
+        WHEN 'NACHA'.
+          <ls_fcat>-edit      = 'X'.
+          <ls_fcat>-drdn_hndl = '3'.
+        WHEN 'TDOCOVER'.
+          <ls_fcat>-edit      = 'X'.
+          <ls_fcat>-drdn_hndl = '4'.
+        WHEN OTHERS.
+          <ls_fcat>-edit = abap_false.
+      ENDCASE.
+    ENDLOOP.
 
-        LOOP AT lt_fieldcat ASSIGNING FIELD-SYMBOL(<ls_fcat>).
-          CASE <ls_fcat>-fieldname.
-            WHEN 'VAKEY'.
-              <ls_fcat>-edit   = abap_false.
-            WHEN 'ANZAL' OR 'PFLD4' OR 'LDEST' OR 'DSNAM' OR 'DSUF1' OR 'DSUF2'.
-              <ls_fcat>-edit = 'X'.
-            WHEN 'DIMME' OR 'DELET'.
-              <ls_fcat>-edit     = 'X'.
-              <ls_fcat>-checkbox = 'X'.
-            WHEN 'VSZTP'.
-              <ls_fcat>-edit      = 'X'.
-              <ls_fcat>-drdn_hndl = '1'.
-            WHEN 'TDARMOD'.
-              <ls_fcat>-edit      = 'X'.
-              <ls_fcat>-drdn_hndl = '2'.
-            WHEN 'NACHA'.
-              <ls_fcat>-edit      = 'X'.
-              <ls_fcat>-drdn_hndl = '3'.
-            WHEN 'TDOCOVER'.
-              <ls_fcat>-edit      = 'X'.
-              <ls_fcat>-drdn_hndl = '4'.
-            WHEN OTHERS.
-              <ls_fcat>-edit = abap_false.
-          ENDCASE.
-        ENDLOOP.
+    SORT lt_fieldcat BY col_pos.
+    go_grid->set_ready_for_input( 0 ).
 
-        SORT lt_fieldcat BY col_pos.
-        go_grid->set_ready_for_input( 0 ).
+    DATA: ls_layout TYPE lvc_s_layo.
+    ls_layout-grid_title = 'Message Condition Records (NACH)'.
+    ls_layout-cwidth_opt = 'X'.
+    ls_layout-zebra      = 'X'.
 
-        DATA: ls_layout TYPE lvc_s_layo.
-        ls_layout-grid_title = 'Message Condition Records (NACH)'.
-        ls_layout-cwidth_opt = 'X'.
-        ls_layout-zebra      = 'X'.
+    SET HANDLER lcl_event_handler=>handle_toolbar FOR go_grid.
+    SET HANDLER lcl_event_handler=>handle_user_command FOR go_grid.
 
-        SET HANDLER lcl_event_handler=>handle_toolbar FOR go_grid.
-        SET HANDLER lcl_event_handler=>handle_user_command FOR go_grid.
+    go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
+    go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
 
-        go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
-        go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
-
-        go_grid->set_table_for_first_display(
-          EXPORTING
-            is_layout                     = ls_layout
-          CHANGING
-            it_outtab                     = gt_output
-            it_fieldcatalog               = lt_fieldcat
-          EXCEPTIONS
-            invalid_parameter_combination = 1
-            program_error                 = 2
-            too_many_lines                = 3
-            OTHERS                        = 4 ).
-      ELSE.
-        go_grid->refresh_table_display( ).
-      ENDIF.
-    ENDIF.
+    go_grid->set_table_for_first_display(
+      EXPORTING
+        is_layout                     = ls_layout
+      CHANGING
+        it_outtab                     = gt_output
+        it_fieldcatalog               = lt_fieldcat
+      EXCEPTIONS
+        invalid_parameter_combination = 1
+        program_error                 = 2
+        too_many_lines                = 3
+        OTHERS                        = 4 ).
   ENDMETHOD.
 ENDCLASS.
-
-*---------------------------------------------------------------------*
-* SELECTION SCREEN EVENTS
-*---------------------------------------------------------------------*
-AT SELECTION-SCREEN OUTPUT.
-  lcl_report=>pbo_100( ).
 
 *---------------------------------------------------------------------*
 * START-OF-SELECTION
