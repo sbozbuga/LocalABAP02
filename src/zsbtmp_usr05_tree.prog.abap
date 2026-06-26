@@ -362,7 +362,7 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_next_logs TYPE tt_dbtablog.
 
     " 2. Try next entry in database (retrieve strictly newer changes, up to 1 row)
-    SELECT tabname, logdate, logtime, logkey, optype, username, tcode, language, dataln, logdata, versno
+    SELECT logkey, logdata, versno
       FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logkey  = @is_dbtablog-logkey
