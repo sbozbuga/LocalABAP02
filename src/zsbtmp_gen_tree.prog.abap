@@ -239,11 +239,12 @@ CLASS lcl_report IMPLEMENTATION.
         AND username IN @s_usera
         AND tcode    IN @s_tcode
         AND optype   IN @s_optype
-      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
       INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
+
+    SORT lt_dblog BY logkey ASCENDING logdate ASCENDING logtime ASCENDING.
 
     TRY.
         CREATE DATA lr_row_new TYPE (p_tab).
