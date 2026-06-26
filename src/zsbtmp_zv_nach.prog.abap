@@ -596,6 +596,7 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 45.
           <ls_fcat>-intlen     = 50.
+          CLEAR: <ls_fcat>-ref_table, <ls_fcat>-ref_field, <ls_fcat>-rollname, <ls_fcat>-domname.
         WHEN 'TDARMOD'.
           <ls_fcat>-fieldname  = 'TDARMOD_DISP'.
           <ls_fcat>-edit       = 'X'.
@@ -603,6 +604,7 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 30.
           <ls_fcat>-intlen     = 50.
+          CLEAR: <ls_fcat>-ref_table, <ls_fcat>-ref_field, <ls_fcat>-rollname, <ls_fcat>-domname.
         WHEN 'NACHA'.
           <ls_fcat>-fieldname  = 'NACHA_DISP'.
           <ls_fcat>-edit       = 'X'.
@@ -610,6 +612,7 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 45.
           <ls_fcat>-intlen     = 50.
+          CLEAR: <ls_fcat>-ref_table, <ls_fcat>-ref_field, <ls_fcat>-rollname, <ls_fcat>-domname.
         WHEN 'TDOCOVER'.
           <ls_fcat>-fieldname  = 'TDOCOVER_DISP'.
           <ls_fcat>-edit       = 'X'.
@@ -617,6 +620,7 @@ CLASS lcl_report IMPLEMENTATION.
           <ls_fcat>-drdn_alias = 'X'.
           <ls_fcat>-outputlen  = 30.
           <ls_fcat>-intlen     = 50.
+          CLEAR: <ls_fcat>-ref_table, <ls_fcat>-ref_field, <ls_fcat>-rollname, <ls_fcat>-domname.
         WHEN OTHERS.
           <ls_fcat>-edit = abap_false.
       ENDCASE.
