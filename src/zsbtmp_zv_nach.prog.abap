@@ -27,9 +27,6 @@ DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
       go_grid      TYPE REF TO cl_gui_alv_grid,
       gv_edit_mode TYPE abap_bool.
 
-*---------------------------------------------------------------------*
-* SELECTION SCREEN
-*---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-t01.
 SELECT-OPTIONS: s_kappl FOR nach-kappl,
                 s_kschl FOR nach-kschl,
@@ -37,7 +34,57 @@ SELECT-OPTIONS: s_kappl FOR nach-kappl,
                 s_ernam FOR nach-ernam,
                 s_erdat FOR nach-erdat,
                 s_knumh FOR nach-knumh.
+PARAMETERS: p_vari TYPE disvariant-variant.
 SELECTION-SCREEN END OF BLOCK b1.
+
+*---------------------------------------------------------------------*
+* SELECTION SCREEN EVENTS
+*---------------------------------------------------------------------*
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_vari.
+  DATA: ls_variant_f4 TYPE disvariant,
+        lv_exit_f4    TYPE c.
+
+  CLEAR ls_variant_f4.
+  ls_variant_f4-report = sy-repid.
+
+  CALL FUNCTION 'REUSE_ALV_VARIANT_F4'
+    EXPORTING
+      is_variant    = ls_variant_f4
+      i_save        = 'A'
+    IMPORTING
+      e_exit        = lv_exit_f4
+      es_variant    = ls_variant_f4
+    EXCEPTIONS
+      not_found     = 1
+      program_error = 2
+      OTHERS        = 3.
+  IF sy-subrc = 0 AND lv_exit_f4 = space.
+    p_vari = ls_variant_f4-variant.
+  ENDIF.
+
+AT SELECTION-SCREEN ON p_vari.
+  IF p_vari IS NOT INITIAL.
+    DATA: ls_variant_chk TYPE disvariant.
+    ls_variant_chk-report  = sy-repid.
+    ls_variant_chk-variant = p_vari.
+
+    CALL FUNCTION 'REUSE_ALV_VARIANT_EXIST'
+      EXPORTING
+        is_variant    = ls_variant_chk
+        i_save        = 'A'
+      EXCEPTIONS
+        wrong_input   = 1
+        not_found     = 2
+        program_error = 3
+        OTHERS        = 4.
+    IF sy-subrc <> 0.
+      IF sy-langu = 'D'.
+        MESSAGE 'Layout-Variante existiert nicht.' TYPE 'E'.
+      ELSE.
+        MESSAGE 'Layout variant does not exist.' TYPE 'E'.
+      ENDIF.
+    ENDIF.
+  ENDIF.
 
 *---------------------------------------------------------------------*
 * CLASS lcl_vakey_builder DEFINITION
@@ -570,6 +617,21 @@ CLASS lcl_report IMPLEMENTATION.
         WHEN OTHERS.
           <ls_fcat>-edit = abap_false.
       ENDCASE.
+
+      " Hide empty non-editable columns if no ALV variant is used
+      IF p_vari IS INITIAL AND <ls_fcat>-edit IS INITIAL.
+        DATA(lv_is_empty) = abap_true.
+        LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_row_chk>).
+          ASSIGN COMPONENT <ls_fcat>-fieldname OF STRUCTURE <ls_row_chk> TO FIELD-SYMBOL(<lv_val_chk>).
+          IF sy-subrc = 0 AND <lv_val_chk> IS NOT INITIAL.
+            lv_is_empty = abap_false.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+        IF lv_is_empty = abap_true.
+          <ls_fcat>-no_out = 'X'.
+        ENDIF.
+      ENDIF.
     ENDLOOP.
 
     SORT lt_fieldcat BY col_pos.
@@ -590,9 +652,15 @@ CLASS lcl_report IMPLEMENTATION.
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
 
+    DATA: ls_variant TYPE disvariant.
+    ls_variant-report  = sy-repid.
+    ls_variant-variant = p_vari.
+
     go_grid->set_table_for_first_display(
       EXPORTING
         is_layout                     = ls_layout
+        is_variant                    = ls_variant
+        i_save                        = 'A'
       CHANGING
         it_outtab                     = gt_output
         it_fieldcatalog               = lt_fieldcat

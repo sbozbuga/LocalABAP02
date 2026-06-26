@@ -64,6 +64,12 @@
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_VARI</KEY>
+     <ENTRY>Layout Variant</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
    </TPOOL>
    <I18N_TPOOL>
     <item>
@@ -79,6 +85,12 @@
        <ID>R</ID>
        <ENTRY>Nachrichtenpflege (ZV_NACH für S/4HANA)</ENTRY>
        <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_VARI</KEY>
+       <ENTRY>Layout-Variante</ENTRY>
+       <LENGTH>22</LENGTH>
       </item>
      </TEXTPOOL>
     </item>
