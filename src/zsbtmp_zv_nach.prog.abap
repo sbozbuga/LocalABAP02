@@ -376,31 +376,31 @@ CLASS lcl_report IMPLEMENTATION.
         DATA: lt_dropdown TYPE lvc_t_dral.
 
         " Dropdown handle 1: VSZTP (Sendezeitpunkt)
-        APPEND VALUE #( handle = 1 key = '1' value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 key = '2' value = '2 - Send with job, additional specification' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 key = '3' value = '3 - Send with application own transaction' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 1 key = '4' value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 1 value = '1' int_value = '1 - Send with periodically scheduled job' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 1 value = '2' int_value = '2 - Send with job, additional specification' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 1 value = '3' int_value = '3 - Send with application own transaction' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 1 value = '4' int_value = '4 - Send immediately (when saving application)' ) TO lt_dropdown.
 
         " Dropdown handle 2: TDARMOD (Archivierungsmodus)
-        APPEND VALUE #( handle = 2 key = '1' value = '1 - Print only' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 2 key = '2' value = '2 - Archive only' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 2 key = '3' value = '3 - Print and archive' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 2 value = '1' int_value = '1 - Print only' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 2 value = '2' int_value = '2 - Archive only' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 2 value = '3' int_value = '3 - Print and archive' ) TO lt_dropdown.
 
         " Dropdown handle 3: NACHA (Sendemedium)
-        APPEND VALUE #( handle = 3 key = '1' value = '1 - Print output' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '2' value = '2 - Fax' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '4' value = '4 - Telex' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '5' value = '5 - External send' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '7' value = '7 - E-Mail' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '8' value = '8 - Special function' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = '9' value = '9 - Events (Workflow)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = 'A' value = 'A - Distribution (ALE)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 3 key = 'I' value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '1' int_value = '1 - Print output' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '2' int_value = '2 - Fax' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '4' int_value = '4 - Telex' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '5' int_value = '5 - External send' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '7' int_value = '7 - E-Mail' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '8' int_value = '8 - Special function' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = '9' int_value = '9 - Events (Workflow)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = 'A' int_value = 'A - Distribution (ALE)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 3 value = 'I' int_value = 'I - External send (Comm. Strategy)' ) TO lt_dropdown.
 
         " Dropdown handle 4: TDOCOVER (Deckblatt drucken)
-        APPEND VALUE #( handle = 4 key = ' ' value = 'Default (Standard)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 4 key = 'X' value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
-        APPEND VALUE #( handle = 4 key = 'N' value = 'N - No (No cover page)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 4 value = ' ' int_value = 'Default (Standard)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 4 value = 'X' int_value = 'X - Yes (Print cover page)' ) TO lt_dropdown.
+        APPEND VALUE #( handle = 4 value = 'N' int_value = 'N - No (No cover page)' ) TO lt_dropdown.
 
         go_grid->set_drop_down_table( it_drop_down_alias = lt_dropdown ).
 
@@ -461,6 +461,9 @@ CLASS lcl_report IMPLEMENTATION.
 
         SET HANDLER lcl_event_handler=>handle_toolbar FOR go_grid.
         SET HANDLER lcl_event_handler=>handle_user_command FOR go_grid.
+
+        go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
+        go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
 
         go_grid->set_table_for_first_display(
           EXPORTING
