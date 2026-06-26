@@ -340,7 +340,7 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     DATA: lt_next_logs TYPE STANDARD TABLE OF dbtablog.
-    SELECT logdata FROM dbtablog
+    SELECT dataln, logdata FROM dbtablog
       WHERE tabname = @is_dbtablog-tabname
         AND logkey  = @is_dbtablog-logkey
         AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
