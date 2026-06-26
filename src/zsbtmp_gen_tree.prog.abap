@@ -674,14 +674,15 @@ CLASS lcl_report IMPLEMENTATION.
           ld_add          TYPE i,
           ld_xstr         TYPE xstring,
           lv_tabkeylen    TYPE i VALUE 0,
-          lv_encoding     TYPE abap_encod,
-          lv_loop_subrc   LIKE sy-subrc,
-          ls_first_nonkey TYPE dfies,
-          ls_cp           TYPE prv_log_cp,
-          ls_df_dec       TYPE dfies,
-          lv_str_offset   TYPE sap_int4,
-          lv_str_length   TYPE sap_int4,
-          lv_versno       TYPE i.
+          lv_encoding      TYPE abap_encod,
+          lv_appl_codepage TYPE tcp00-cpcodepage,
+          lv_loop_subrc    LIKE sy-subrc,
+          ls_first_nonkey  TYPE dfies,
+          ls_cp            TYPE prv_log_cp,
+          ls_df_dec        TYPE dfies,
+          lv_str_offset    TYPE sap_int4,
+          lv_str_length    TYPE sap_int4,
+          lv_versno        TYPE i.
 
     FIELD-SYMBOLS: <lv_field> TYPE any.
 
@@ -700,9 +701,12 @@ CLASS lcl_report IMPLEMENTATION.
     " Determine the appropriate raw buffer encoding using standard SAP lookup logic
     CALL FUNCTION 'SCP_GET_CODEPAGE_NUMBER'
       IMPORTING
-        appl_codepage = lv_encoding
+        appl_codepage = lv_appl_codepage
       EXCEPTIONS
         others        = 2.
+    IF sy-subrc = 0.
+      lv_encoding = lv_appl_codepage.
+    ENDIF.
 
     LOOP AT gt_codepages INTO ls_cp
       WHERE migdate > is_dblog-logdate OR
