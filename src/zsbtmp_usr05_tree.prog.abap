@@ -255,11 +255,12 @@ CLASS lcl_report IMPLEMENTATION.
         AND username IN @s_usera
         AND tcode    IN @s_tcode
         AND optype   IN @s_optype
-      ORDER BY logkey ASCENDING, logdate ASCENDING, logtime ASCENDING
       INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
     IF sy-subrc <> 0.
       " check sy-subrc for linter
     ENDIF.
+
+    SORT lt_dblog BY logkey ASCENDING logdate ASCENDING logtime ASCENDING.
 
     LOOP AT lt_dblog ASSIGNING FIELD-SYMBOL(<ls_dblog>).
       " Decode log entry
