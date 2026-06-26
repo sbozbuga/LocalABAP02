@@ -196,9 +196,11 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_data.
-    DATA: lt_dblog   TYPE tt_dbtablog,
-          lr_row_new TYPE REF TO data,
-          lr_row_old TYPE REF TO data.
+    DATA: lt_dblog       TYPE tt_dbtablog,
+          lr_row_new     TYPE REF TO data,
+          lr_row_old     TYPE REF TO data,
+          lv_old_val_str TYPE string,
+          lv_new_val_str TYPE string.
 
     FIELD-SYMBOLS: <ls_row_new>   TYPE any,
                    <ls_row_old>   TYPE any,
@@ -251,16 +253,21 @@ CLASS lcl_report IMPLEMENTATION.
             populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_new> ).
             LOOP AT mt_dfies INTO DATA(ls_field) WHERE keyflag = ' '.
               ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
-              IF sy-subrc = 0 AND <lv_val_new> IS NOT INITIAL.
-                DATA(ls_out) = init_output_row( <ls_dblog> ).
-                ls_out-fname     = ls_field-fieldname.
-                ls_out-ftext     = ls_field-fieldtext.
-                ls_out-value_old = ''.
-                ls_out-value_new = |{ <lv_val_new> }|.
-                ls_out-icon      = icon_create.
-                APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
-                ls_out-key_disp  = build_key_disp( <ls_row_new> ).
-                APPEND ls_out TO mt_all_logs.
+              IF sy-subrc = 0.
+                lv_new_val_str = |{ <lv_val_new> }|.
+                REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
+                CONDENSE lv_new_val_str.
+                IF lv_new_val_str IS NOT INITIAL.
+                  DATA(ls_out) = init_output_row( <ls_dblog> ).
+                  ls_out-fname     = ls_field-fieldname.
+                  ls_out-ftext     = ls_field-fieldtext.
+                  ls_out-value_old = ''.
+                  ls_out-value_new = lv_new_val_str.
+                  ls_out-icon      = icon_create.
+                  APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
+                  ls_out-key_disp  = build_key_disp( <ls_row_new> ).
+                  APPEND ls_out TO mt_all_logs.
+                ENDIF.
               ENDIF.
             ENDLOOP.
           ENDIF.
@@ -272,16 +279,21 @@ CLASS lcl_report IMPLEMENTATION.
             populate_key_fields( EXPORTING is_dblog = <ls_dblog> CHANGING cs_row = <ls_row_old> ).
             LOOP AT mt_dfies INTO ls_field WHERE keyflag = ' '.
               ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_old> TO <lv_val_old>.
-              IF sy-subrc = 0 AND <lv_val_old> IS NOT INITIAL.
-                ls_out = init_output_row( <ls_dblog> ).
-                ls_out-fname     = ls_field-fieldname.
-                ls_out-ftext     = ls_field-fieldtext.
-                ls_out-value_old = |{ <lv_val_old> }|.
-                ls_out-value_new = ''.
-                ls_out-icon      = icon_delete.
-                APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
-                ls_out-key_disp  = build_key_disp( <ls_row_old> ).
-                APPEND ls_out TO mt_all_logs.
+              IF sy-subrc = 0.
+                lv_old_val_str = |{ <lv_val_old> }|.
+                REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
+                CONDENSE lv_old_val_str.
+                IF lv_old_val_str IS NOT INITIAL.
+                  ls_out = init_output_row( <ls_dblog> ).
+                  ls_out-fname     = ls_field-fieldname.
+                  ls_out-ftext     = ls_field-fieldtext.
+                  ls_out-value_old = lv_old_val_str.
+                  ls_out-value_new = ''.
+                  ls_out-icon      = icon_delete.
+                  APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
+                  ls_out-key_disp  = build_key_disp( <ls_row_old> ).
+                  APPEND ls_out TO mt_all_logs.
+                ENDIF.
               ENDIF.
             ENDLOOP.
           ENDIF.
@@ -304,20 +316,34 @@ CLASS lcl_report IMPLEMENTATION.
               IF sy-subrc = 0.
                 ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row_new> TO <lv_val_new>.
                 IF sy-subrc = 0.
-                  IF <lv_val_old> <> <lv_val_new>.
+                  lv_old_val_str = |{ <lv_val_old> }|.
+                  REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
+                  CONDENSE lv_old_val_str.
+
+                  lv_new_val_str = |{ <lv_val_new> }|.
+                  REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
+                  CONDENSE lv_new_val_str.
+
+                  IF lv_old_val_str IS INITIAL AND lv_new_val_str IS INITIAL.
+                    CONTINUE.
+                  ENDIF.
+
+                  IF p_real = abap_true AND lv_old_val_str = lv_new_val_str.
+                    CONTINUE.
+                  ENDIF.
+
+                  IF lv_old_val_str <> lv_new_val_str OR p_real = abap_false.
                     ls_out = init_output_row( <ls_dblog> ).
                     ls_out-fname     = ls_field-fieldname.
                     ls_out-ftext     = ls_field-fieldtext.
-                    ls_out-value_old = |{ <lv_val_old> }|.
-                    ls_out-value_new = |{ <lv_val_new> }|.
+                    ls_out-value_old = lv_old_val_str.
+                    ls_out-value_new = lv_new_val_str.
                     ls_out-icon      = icon_change.
 
-                    IF p_real = abap_true AND ls_out-value_old = ls_out-value_new.
-                      CONTINUE.
+                    IF lv_old_val_str <> lv_new_val_str.
+                      APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 6 int = 1 ) ) TO ls_out-color.
+                      APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
                     ENDIF.
-
-                    APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 6 int = 1 ) ) TO ls_out-color.
-                    APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
                     ls_out-key_disp  = build_key_disp( <ls_row_old> ).
                     APPEND ls_out TO mt_all_logs.
                   ENDIF.
