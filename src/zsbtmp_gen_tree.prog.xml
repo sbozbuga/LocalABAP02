@@ -127,6 +127,220 @@
      </TEXTPOOL>
     </item>
    </I18N_TPOOL>
+   <LONGTEXTS>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>ZSBTMP_GEN_TREE</OBJECT>
+      <LANGU>E</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00021</TXTLINES>
+      <DOKSTATE>R</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>ZSBTMP_GEN_TREE</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>E</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The Generic Table Change Explorer is an interactive utility to search,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>decode, and analyze database table changes (from table DBTABLOG) for</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>any table that is configured for logging in the system.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;INTEGRATION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>It uses Run-Time Type Information (RTTI) to dynamically analyze the</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>table structure (P_TAB) and reconstruct the logged data from raw bytes</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>without requiring static definition of the target table.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FEATURES&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;SELECTION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>You can filter the logs by Table Name (P_TAB) and Log Date (s_logdat).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Additional filters allow restricting by Log Key, modifying user,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Transaction Code (tcode), and Operation Type (optype; default 'U').</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The checkbox 'Only actual changes' (P_REAL) filters out entries</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>where the values did not change (old value equals new value).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;OUTPUT&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>In online mode, a split-screen layout is displayed:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Left Pane: A hierarchical tree of changes grouped by record key.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Right Pane: A ALV Grid listing the history of changes for the</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  selected node. It displays change icons, old/new values with color</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  highlighting, and metadata (date, time, user, and transaction).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>In background (batch) mode, a flat list of change logs is printed.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>ZSBTMP_GEN_TREE</OBJECT>
+      <LANGU>D</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <TXTLINES>00021</TXTLINES>
+      <DOKSTATE>R</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>ZSBTMP_GEN_TREE</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>D</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Der generische Tabellen-Änderungsprotokoll-Explorer dient zur</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>interaktiven Untersuchung, Dekodierung und Analyse von</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Tabellenänderungen (aus Tabelle DBTABLOG) für jede protokollierte</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Tabelle im SAP-System.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;INTEGRATION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Das Programm nutzt RTTI (Run-Time Type Information), um die</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Tabellenstruktur zur Laufzeit dynamisch zu analysieren und die</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Protokolldaten aus den Rohdaten-Bytes zu rekonstruieren, ohne dass</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>die Tabelle im Programm statisch definiert sein muss.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FEATURES&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;SELECTION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Auswertung kann über den Tabellennamen (P_TAB) und das</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Protokolldatum (s_logdat) eingeschränkt werden.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Zusätzliche Filter ermöglichen eine Einschränkung nach dem</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Protokollschlüssel (s_key), ändernden Benutzer (USERA),</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Transaktionscode (tcode) und Operationstyp (optype; Standard 'U').</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Option 'Nur echte Änderungen' (P_REAL) filtert Einträge heraus,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>bei denen sich die Werte nicht geändert haben.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;OUTPUT&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Im Online-Modus wird ein geteilter Bildschirm angezeigt:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Linker Bereich: Ein ALV-Baum zur Gruppierung nach Datensatzschlüssel.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Rechter Bereich: Ein ALV-Grid mit der detaillierten Historie der</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  Feldänderungen (mit Farbhervorhebung und Symbolen).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Im Hintergrundmodus (Batch) wird eine flache Liste ausgegeben.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+   </LONGTEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>
