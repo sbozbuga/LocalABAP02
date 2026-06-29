@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -104,6 +104,225 @@
      </TEXTPOOL>
     </item>
    </I18N_TPOOL>
+   <LONGTEXTS>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>ZSBTMP_USR05_TREE</OBJECT>
+      <LANGU>E</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00020</TXTLINES>
+      <DOKSTATE>R</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>ZSBTMP_USR05_TREE</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>E</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The USR05 Change Logs Explorer displays and analyzes change history</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>for user parameters (table USR05).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>It decodes raw changes recorded in table DBTABLOG and displays a</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>detailed history of parameter insertions, updates, and deletions.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;INTEGRATION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Table logging must be active for table USR05 in the system (system</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>profile parameter rec/client) for change logs to be recorded.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FEATURES&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;SELECTION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>You can filter the logs by User Name (BNAME) and Log Date (LOGDATE).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Additional filters allow restricting by the modifying user (USERA),</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Transaction Code (TCODE), and Operation Type (OPTYPE; default &apos;U&apos;).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The checkbox &apos;only actual changes&apos; (P_REAL) filters out entries</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>where the parameter value did not change (old value equals new value).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;OUTPUT&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>In online mode, a split-screen layout is displayed:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Left Pane: A hierarchical tree of Users and their Parameter IDs.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Right Pane: A ALV Grid listing the history of changes for the</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  selected node. It displays change icons, old/new values with color</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  highlighting, and metadata (date, time, user, and transaction).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>In background (batch) mode, a flat list of change logs is printed.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>ZSBTMP_USR05_TREE</OBJECT>
+      <LANGU>D</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <TXTLINES>00020</TXTLINES>
+      <DOKSTATE>R</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>ZSBTMP_USR05_TREE</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>D</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Der USR05 Änderungsbeleg-Explorer dient zur Anzeige und Analyse der</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Änderungshistorie von Benutzerparametern (Tabelle USR05).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Das Programm dekodiert die in Tabelle DBTABLOG aufgezeichneten</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Änderungen und zeigt den Verlauf von Einfügungen, Aktualisierungen</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>und Löschungen pro Benutzer an.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;INTEGRATION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Tabellenprotokollierung für die Tabelle USR05 muss im System</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>aktiviert sein (Profilparameter rec/client), damit Änderungen</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>protokolliert werden.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FEATURES&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;SELECTION&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Protokolle können nach Benutzer (BNAME) und Log-Datum</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>(LOGDATE) gefiltert werden.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Weitere Filter ermöglichen die Einschränkung nach dem ändernden</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>Benutzer (USERA), Transaktionscode (TCODE) und Operationstyp</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>(OPTYPE; Standardwert &apos;U&apos;).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Option &apos;Nur echte Änderungen&apos; (P_REAL) filtert Einträge heraus,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>bei denen sich der Parameterwert nicht geändert hat.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U2</TDFORMAT>
+       <TDLINE>&amp;OUTPUT&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Im Online-Modus wird ein geteilter Bildschirm angezeigt:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Linker Bereich: Ein hierarchischer Baum der Benutzer und ihrer</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  Parameter-IDs.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>- Rechter Bereich: Ein ALV-Grid mit der Historie der Änderungen für</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  den ausgewählten Knoten (mit Farbhervorhebung und Symbolen).</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Im Hintergrundmodus (Batch) wird eine flache Liste ausgegeben.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+   </LONGTEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>
