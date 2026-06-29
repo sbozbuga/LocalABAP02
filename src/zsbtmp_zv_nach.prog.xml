@@ -574,7 +574,124 @@
       </item>
      </TEXTPOOL>
     </item>
-   </I18N_TPOOL>
-  </asx:values>
- </asx:abap>
-</abapGit>
+    </I18N_TPOOL>
+    <LONGTEXTS>
+     <item>
+      <DOKIL>
+       <ID>RE</ID>
+       <OBJECT>ZSBTMP_ZV_NACH</OBJECT>
+       <LANGU>E</LANGU>
+       <TYP>E</TYP>
+       <VERSION>0001</VERSION>
+       <MASTERLANG>X</MASTERLANG>
+       <TXTLINES>00026</TXTLINES>
+       <DOKSTATE>R</DOKSTATE>
+      </DOKIL>
+      <HEAD>
+       <TDOBJECT>DOKU</TDOBJECT>
+       <TDNAME>ZSBTMP_ZV_NACH</TDNAME>
+       <TDID>RE</TDID>
+       <TDSPRAS>E</TDSPRAS>
+       <TDFORM>S_DOCU_SHOW</TDFORM>
+       <TDSTYLE>S_DOCUS1</TDSTYLE>
+       <TDVERSION>00001</TDVERSION>
+       <TDLINESIZE>072</TDLINESIZE>
+      </HEAD>
+      <LINES>
+       <TLINE>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Maintenance program for message condition records (NACH) in S/4HANA.</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Since the VAKEY field was removed from table NACH in S/4HANA, this</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>program dynamically rebuilds and displays the Variable Key (VAKEY)</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>by reading the corresponding condition table (Bxxx) based on the</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>table number (KOTABNR) and condition record number (KNUMH).</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;INTEGRATION&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>This program replaces the ZV_NACH SM30 view, which is no longer fully</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>functional because VAKEY was removed from table NACH.</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;PREREQUISITES&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Condition records must exist in table NACH and the corresponding</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>condition table (e.g., B011).</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;FEATURES&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>U2</TDFORMAT>
+        <TDLINE>&amp;SELECTION&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Users can filter condition records by Application (KAPPL),</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>Condition Type (KSCHL), Table (KOTABNR), Created By (ERNAM),</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>Creation Date (ERDAT), and Condition Record Number (KNUMH).</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>U2</TDFORMAT>
+        <TDLINE>&amp;OUTPUT&amp;</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>The report displays the fields of the NACH table along with a</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>dynamically built Variable Key (VAKEY). The Variable Key is</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>concatenated from the key fields of the respective B* table (excluding</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>MANDT, KAPPL, KSCHL, KNUMH), with a space separating the key values</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>(e.g., &quot;1100 ZF2&quot;).</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Users can toggle between display and edit modes, save changes</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>directly back to the database, and view cell highlights for modified</TDLINE>
+       </TLINE>
+       <TLINE>
+        <TDLINE>rows.</TDLINE>
+       </TLINE>
+      </LINES>
+     </item>
+    </LONGTEXTS>
+   </asx:values>
+  </asx:abap>
+ </abapGit>

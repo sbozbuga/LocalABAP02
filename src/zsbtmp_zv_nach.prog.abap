@@ -34,7 +34,7 @@
 * 29.06.2026 SBO-NHS003381 Farbhervorhebung geänderter Zeilen/Zellen   *
 *                          & grüne Rückmeldung nach Speichern          *
 *----------------------------------------------------------------------*
-REPORT ZNACH NO STANDARD PAGE HEADING.
+REPORT znach NO STANDARD PAGE HEADING.
 
 TABLES: nach.
 
@@ -45,9 +45,9 @@ TYPE-POOLS: icon.
 *---------------------------------------------------------------------*
 TYPES: BEGIN OF ty_output.
          INCLUDE STRUCTURE nach.
-TYPES:   vakey_disp    TYPE char100,
-         cell_colors   TYPE lvc_t_scol,
-         row_color     TYPE char4,
+         TYPES:   vakey_disp  TYPE char100,
+         cell_colors TYPE lvc_t_scol,
+         row_color   TYPE char4,
        END OF ty_output.
 
 DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
@@ -91,26 +91,6 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_vari.
       OTHERS        = 3.
   IF sy-subrc = 0 AND lv_exit_f4 = space.
     p_vari = ls_variant_f4-variant.
-  ENDIF.
-
-AT SELECTION-SCREEN ON p_vari.
-  IF p_vari IS NOT INITIAL.
-    DATA: ls_variant_chk TYPE disvariant.
-    ls_variant_chk-report  = sy-repid.
-    ls_variant_chk-variant = p_vari.
-
-    CALL FUNCTION 'REUSE_ALV_VARIANT_EXIST'
-      EXPORTING
-        is_variant    = ls_variant_chk
-        i_save        = 'A'
-      EXCEPTIONS
-        wrong_input   = 1
-        not_found     = 2
-        program_error = 3
-        OTHERS        = 4.
-    IF sy-subrc <> 0.
-      MESSAGE TEXT-m01 TYPE 'E'.
-    ENDIF.
   ENDIF.
 
 *---------------------------------------------------------------------*
@@ -213,7 +193,7 @@ CLASS lcl_vakey_builder IMPLEMENTATION.
       lv_select_list = 'KNUMH'.
     ENDIF.
 
-    SELECT SINGLE (lv_select_list) FROM (lv_tabname) WHERE knumh = @iv_knumh INTO CORRESPONDING FIELDS OF @<ls_row>.
+    SELECT SINGLE (lv_select_list) FROM (lv_tabname) WHERE knumh = @iv_knumh INTO CORRESPONDING FIELDS OF @<ls_row>. "#EC CI_SEL_NESTED
     IF sy-subrc = 0.
       LOOP AT lt_fields INTO DATA(ls_field).
         ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <ls_row> TO FIELD-SYMBOL(<lv_val>).
@@ -349,8 +329,8 @@ CLASS lcl_report IMPLEMENTATION.
   METHOD get_data.
     CLEAR: gt_output, gt_original.
 
-    SELECT * FROM nach
-      INTO CORRESPONDING FIELDS OF TABLE @gt_output
+    SELECT * FROM nach                        "#EC CI_ALL_FIELDS_NEEDED
+      INTO TABLE @DATA(lt_output)                       "#EC CI_GENBUFF
       WHERE kappl IN @s_kappl
         AND kschl IN @s_kschl
         AND kotabnr IN @s_kotab
@@ -361,6 +341,9 @@ CLASS lcl_report IMPLEMENTATION.
       " gt_output remains empty, handled during display validation
     ENDIF.
 
+    gt_output = CORRESPONDING #( lt_output ).
+    REFRESH lt_output.
+                                                     "#EC CI_SEL_NESTED
     LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_out>).
       <ls_out>-vakey_disp = lcl_vakey_builder=>get_vakey(
         iv_kotabnr = <ls_out>-kotabnr
@@ -624,6 +607,11 @@ CLASS lcl_report IMPLEMENTATION.
         program_error          = 2
         OTHERS                 = 3.
 
+    IF sy-subrc NE 0.
+      MESSAGE e001(00) WITH 'Field catalog error' DISPLAY LIKE 'I'.
+      RETURN.
+    ENDIF.
+
     DATA: ls_fcat TYPE lvc_s_fcat.
     ls_fcat-fieldname = 'VAKEY_DISP'.
     ls_fcat-scrtext_s = TEXT-f01.
@@ -688,7 +676,7 @@ CLASS lcl_report IMPLEMENTATION.
       " Hide empty non-editable columns if no ALV variant is used
       IF p_vari IS INITIAL AND <ls_fcat>-edit IS INITIAL.
         DATA(lv_is_empty) = abap_true.
-        LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_row_chk>).
+        LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_row_chk>). "#EC CI_NESTED
           ASSIGN COMPONENT <ls_fcat>-fieldname OF STRUCTURE <ls_row_chk> TO FIELD-SYMBOL(<lv_val_chk>).
           IF sy-subrc = 0 AND <lv_val_chk> IS NOT INITIAL.
             lv_is_empty = abap_false.
