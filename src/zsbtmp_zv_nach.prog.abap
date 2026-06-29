@@ -375,6 +375,15 @@ CLASS lcl_report IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
+    IF lv_failed_lock = abap_true.
+      ROLLBACK WORK.
+      LOOP AT lt_locked_keys INTO DATA(lv_key).
+        CALL FUNCTION 'DEQUEUE_E_TABLE'
+          EXPORTING
+            mode_rstable = 'E'
+            tabname      = 'NACH'
+            varkey       = lv_key.
+      ENDLOOP.
       MESSAGE TEXT-m03 TYPE 'E'.
       RETURN.
     ENDIF.
