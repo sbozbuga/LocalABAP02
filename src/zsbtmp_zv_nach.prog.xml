@@ -67,6 +67,30 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>Q04</KEY>
+     <ENTRY>Unsaved Changes</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>Q05</KEY>
+     <ENTRY>Unsaved changes exist. Do you want to save them before exiting?</ENTRY>
+     <LENGTH>70</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>B04</KEY>
+     <ENTRY>Yes</ENTRY>
+     <LENGTH>10</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>B05</KEY>
+     <ENTRY>No</ENTRY>
+     <LENGTH>10</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>M02</KEY>
      <ENTRY>No condition records found matching selection criteria.</ENTRY>
      <LENGTH>60</LENGTH>
@@ -344,6 +368,30 @@
        <KEY>Q03</KEY>
        <ENTRY>In den Änderungsmodus wechseln</ENTRY>
        <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>Q04</KEY>
+       <ENTRY>Ungesicherte Änderungen</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>Q05</KEY>
+       <ENTRY>Es sind ungesicherte Änderungen vorhanden. Sichern vor dem Verlassen?</ENTRY>
+       <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>B04</KEY>
+       <ENTRY>Ja</ENTRY>
+       <LENGTH>10</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>B05</KEY>
+       <ENTRY>Nein</ENTRY>
+       <LENGTH>10</LENGTH>
       </item>
       <item>
        <ID>I</ID>

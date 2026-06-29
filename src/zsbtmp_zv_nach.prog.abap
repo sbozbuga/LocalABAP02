@@ -245,8 +245,8 @@ CLASS lcl_event_handler DEFINITION FINAL.
         IMPORTING e_object e_interactive,
       handle_user_command FOR EVENT user_command OF cl_gui_alv_grid
         IMPORTING e_ucomm,
-      handle_data_changed FOR EVENT data_changed OF cl_gui_alv_grid
-        IMPORTING er_data_changed.
+      handle_data_changed_finished FOR EVENT data_changed_finished OF cl_gui_alv_grid
+        IMPORTING e_modified et_good_cells.
 ENDCLASS.
 
 *---------------------------------------------------------------------*
@@ -259,6 +259,9 @@ CLASS lcl_report DEFINITION FINAL.
       get_data,
       save_data,
       update_colors,
+      check_before_exit
+        RETURNING
+          VALUE(rv_can_exit) TYPE abap_bool,
       display_alv.
 ENDCLASS.
 
@@ -527,6 +530,68 @@ CLASS lcl_report IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD check_before_exit.
+    rv_can_exit = abap_true.
+
+    IF go_grid IS BOUND.
+      go_grid->check_changed_data( ).
+    ENDIF.
+
+    DATA(lv_changed) = abap_false.
+    LOOP AT gt_output INTO DATA(ls_out).
+      READ TABLE gt_original INTO DATA(ls_orig) WITH KEY knumh = ls_out-knumh.
+      IF sy-subrc = 0.
+        DATA(ls_nach_new) = CORRESPONDING nach( ls_out ).
+        DATA(ls_nach_old) = CORRESPONDING nach( ls_orig ).
+        IF ls_nach_new <> ls_nach_old.
+          lv_changed = abap_true.
+          EXIT.
+        ENDIF.
+      ELSE.
+        lv_changed = abap_true.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    IF lv_changed = abap_true.
+      DATA: lv_answer TYPE c.
+
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          titlebar              = CONV textpooltx( TEXT-q04 )
+          text_question         = CONV textpooltx( TEXT-q05 )
+          text_button_1         = CONV textpooltx( TEXT-b04 )
+          text_button_2         = CONV textpooltx( TEXT-b05 )
+          default_button        = '1'
+          display_cancel_button = 'X'
+        IMPORTING
+          answer                = lv_answer
+        EXCEPTIONS
+          text_not_found        = 1
+          OTHERS                = 2.
+
+      IF sy-subrc = 0.
+        CASE lv_answer.
+          WHEN '1'. " Yes, save changes
+            save_data( ).
+
+            " Check if save was successful (no differences remain)
+            IF gt_original = gt_output.
+              rv_can_exit = abap_true.
+            ELSE.
+              rv_can_exit = abap_false. " Save failed, cancel exit
+            ENDIF.
+          WHEN '2'. " No, discard changes
+            rv_can_exit = abap_true.
+          WHEN 'A'. " Cancel
+            rv_can_exit = abap_false.
+        ENDCASE.
+      ELSE.
+        rv_can_exit = abap_false.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
   METHOD display_alv.
     CREATE OBJECT go_grid
       EXPORTING
@@ -725,3 +790,14 @@ INITIALIZATION.
 *---------------------------------------------------------------------*
 START-OF-SELECTION.
   lcl_report=>run( ).
+
+*---------------------------------------------------------------------*
+* AT USER-COMMAND
+*---------------------------------------------------------------------*
+AT USER-COMMAND.
+  CASE sy-ucomm.
+    WHEN 'BACK' OR 'EXIT' OR 'CANC' OR '%EX' OR 'RW'.
+      IF lcl_report=>check_before_exit( ) = abap_false.
+        CLEAR sy-ucomm.
+      ENDIF.
+  ENDCASE.
