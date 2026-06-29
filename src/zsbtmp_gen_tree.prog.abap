@@ -1,5 +1,21 @@
 *&---------------------------------------------------------------------*
-*& Report ZSBTMP_GEN_TREE - Generic Table Change Explorer
+*& Report YTABL_PROTOKOLL - Table Change Logs Explorer
+*&---------------------------------------------------------------------*
+* Transaktion
+* Datum         25.06.2026
+*----------------------------------------------------------------------*
+* Firma         CTDI GmbH Malsch Headquarter
+*                                                                      *
+* Beschreibung:  (Funktion)                                            *
+*& ALV Tree and Grid Split-Screen Display for generic Table Change Logs
+*&---------------------------------------------------------------------*
+* Anforderer:  M.Zaharia
+* Ticket....:  2606-516
+* Konzept...:  ???                                                     *
+* Betreuung.:  ???                                                     *
+*----------------------------------------------------------------------*
+* Entwickler...: SBO-NHS003381
+*
 *&---------------------------------------------------------------------*
 *& PURPOSE:
 *&   An interactive utility to explore database table change logs for any
@@ -36,7 +52,22 @@
 *&   - S_OPTYPE: Filter by operation type (Insert, Update, Delete)
 *&   - P_REAL: If checked, filters out entries where old & new values are identical
 *&---------------------------------------------------------------------*
-REPORT zsbtmp_gen_tree.
+
+************************************************************************
+******************** !!!ACHTUNG BITTE BEACHTEN!!! **********************
+************************************************************************
+* !!!      Keine Korrekturen oder Erweiterungen ohne Absprache     !!! *
+* !!!      mit der Anwendungsentwicklung                           !!! *
+*----------------------------------------------------------------------*
+* !!! Keine Korrekturen/Erweiterung ohne Dokumentation in Historie !!! *
+************************************************************************
+* Änderungshistorie                                                    *
+*                                                                      *
+* Datum      Entwickler  Bemerkung                                     *
+*======================================================================*
+* xx.xx.xxxx ???         ???
+*----------------------------------------------------------------------*
+REPORT YTABL_PROTOKOLL.
 
 TABLES: dbtablog.
 TYPE-POOLS: icon.
