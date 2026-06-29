@@ -379,17 +379,18 @@ CLASS lcl_report IMPLEMENTATION.
           lv_failed      TYPE i,
           lv_failed_lock TYPE abap_bool.
 
-    DEFINE append_set_clause.
-      if ls_nach_new-&1 <> ls_nach_old-&1.
-        lv_val_str = |{ ls_nach_new-&1 }|.
-        replace all occurrences of `'` in lv_val_str with `''`.
-        append |&1 = '{ lv_val_str }'| to lt_set_clause.
-      endif.
-    END-OF-DEFINITION.
+*    DEFINE append_set_clause.
+*      IF ls_nach_new-&1 <> ls_nach_old-&1.
+*        lv_val_str = |{ ls_nach_new-&1 }|.
+*        REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
+*        APPEND |&1 = '{ lv_val_str }'| TO lt_set_clause.
+*      ENDIF.
+*    END-OF-DEFINITION.
 
-    DATA: lt_set_clause TYPE TABLE OF string,
-          lv_set_clause TYPE string,
-          lv_val_str    TYPE string.
+    DATA: "lt_set_clause TYPE TABLE OF string,
+      "lv_set_clause TYPE string,
+      lv_val_str  TYPE string,
+      lt_nach_new TYPE TABLE OF nach.
 
     LOOP AT gt_output INTO DATA(ls_out).
       READ TABLE gt_original INTO DATA(ls_orig) WITH KEY knumh = ls_out-knumh.
@@ -397,54 +398,57 @@ CLASS lcl_report IMPLEMENTATION.
         DATA(ls_nach_new) = CORRESPONDING nach( ls_out ).
         DATA(ls_nach_old) = CORRESPONDING nach( ls_orig ).
         IF ls_nach_new <> ls_nach_old.
-          CLEAR lt_set_clause.
-          append_set_clause vsztp.
-          append_set_clause tdarmod.
-          append_set_clause nacha.
-          append_set_clause tdocover.
-          append_set_clause anzal.
-          append_set_clause pfld4.
-          append_set_clause ldest.
-          append_set_clause dsnam.
-          append_set_clause dsuf1.
-          append_set_clause dsuf2.
-          append_set_clause dimme.
-          append_set_clause delet.
+*          CLEAR lt_set_clause.
+*          append_set_clause vsztp.
+*          append_set_clause tdarmod.
+*          append_set_clause nacha.
+*          append_set_clause tdocover.
+*          append_set_clause anzal.
+*          append_set_clause pfld4.
+*          append_set_clause ldest.
+*          append_set_clause dsnam.
+*          append_set_clause dsuf1.
+*          append_set_clause dsuf2.
+*          append_set_clause dimme.
+*          append_set_clause delet.
+*
+*          IF lt_set_clause IS NOT INITIAL.
+*          CONCATENATE LINES OF lt_set_clause INTO lv_set_clause SEPARATED BY ', '.
 
-          IF lt_set_clause IS NOT INITIAL.
-            CONCATENATE LINES OF lt_set_clause INTO lv_set_clause SEPARATED BY ', '.
+          DATA(lv_varkey) = CONV rstable-varkey( |{ sy-mandt }{ ls_out-knumh }| ).
+          CALL FUNCTION 'ENQUEUE_E_TABLE'
+            EXPORTING
+              mode_rstable   = 'E'
+              tabname        = 'NACH'
+              varkey         = lv_varkey
+            EXCEPTIONS
+              foreign_lock   = 1
+              system_failure = 2
+              OTHERS         = 3.
+          IF sy-subrc = 0.
+            APPEND lv_varkey TO lt_locked_keys.
+**              TRY.
+**                  UPDATE nach SET (lv_set_clause)
+**                    WHERE kappl   = @ls_nach_new-kappl
+**                      AND kschl   = @ls_nach_new-kschl
+**                      AND kotabnr = @ls_nach_new-kotabnr
+**                      AND knumh   = @ls_nach_new-knumh.
+**                  IF sy-subrc = 0.
+**                    lv_success = lv_success + 1.
+**                  ELSE.
+**                    lv_failed = lv_failed + 1.
+**                  ENDIF.
+**                CATCH cx_sy_dynamic_osql_error.
+**                  lv_failed = lv_failed + 1.
+**              ENDTRY.
+*              MODIFY nach FROM ls_nach_new.
+            APPEND ls_nach_new TO lt_nach_new.
 
-            DATA(lv_varkey) = CONV rstable-varkey( |{ sy-mandt }{ ls_out-knumh }| ).
-            CALL FUNCTION 'ENQUEUE_E_TABLE'
-              EXPORTING
-                mode_rstable   = 'E'
-                tabname        = 'NACH'
-                varkey         = lv_varkey
-              EXCEPTIONS
-                foreign_lock   = 1
-                system_failure = 2
-                OTHERS         = 3.
-            IF sy-subrc = 0.
-              APPEND lv_varkey TO lt_locked_keys.
-              TRY.
-                  UPDATE nach SET (lv_set_clause)
-                    WHERE kappl   = @ls_nach_new-kappl
-                      AND kschl   = @ls_nach_new-kschl
-                      AND kotabnr = @ls_nach_new-kotabnr
-                      AND knumh   = @ls_nach_new-knumh.
-                  IF sy-subrc = 0.
-                    lv_success = lv_success + 1.
-                  ELSE.
-                    lv_failed = lv_failed + 1.
-                  ENDIF.
-                CATCH cx_sy_dynamic_osql_error.
-                  lv_failed = lv_failed + 1.
-              ENDTRY.
-            ELSE.
-              lv_failed_lock = abap_true.
-              EXIT.
-            ENDIF.
+          ELSE.
+            lv_failed_lock = abap_true.
+            EXIT.
           ENDIF.
+*          ENDIF.
         ENDIF.
       ENDIF.
     ENDLOOP.
@@ -466,43 +470,50 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF lv_success > 0.
-      COMMIT WORK.
-      LOOP AT lt_locked_keys INTO lv_key.
-        CALL FUNCTION 'DEQUEUE_E_TABLE'
-          EXPORTING
-            mode_rstable = 'E'
-            tabname      = 'NACH'
-            varkey       = lv_key.
-      ENDLOOP.
-      gt_original = gt_output.
-      IF sy-langu = 'D'.
-        MESSAGE |Es wurden { lv_success } Sätze erfolgreich gesichert.| TYPE 'S'.
-      ELSE.
-        MESSAGE |Saved { lv_success } records successfully.| TYPE 'S'.
-      ENDIF.
-      IF go_grid IS BOUND.
-        go_grid->refresh_table_display( ).
-      ENDIF.
-    ELSEIF lv_failed > 0.
-      ROLLBACK WORK.
-      LOOP AT lt_locked_keys INTO lv_key.
-        CALL FUNCTION 'DEQUEUE_E_TABLE'
-          EXPORTING
-            mode_rstable = 'E'
-            tabname      = 'NACH'
-            varkey       = lv_key.
-      ENDLOOP.
-      IF sy-langu = 'D'.
-        MESSAGE 'Sichern fehlgeschlagen: Datenbankfehler aufgetreten.' TYPE 'E'.
-      ELSE.
-        MESSAGE 'Save failed: Database error occurred.' TYPE 'E'.
-      ENDIF.
-    ELSE.
+    IF lt_nach_new IS  INITIAL.
       IF sy-langu = 'D'.
         MESSAGE 'Es wurden keine Änderungen festgestellt.' TYPE 'S'.
       ELSE.
         MESSAGE 'No changes were detected.' TYPE 'S'.
+      ENDIF.
+    ELSE.
+
+      MODIFY nach FROM   TABLE lt_nach_new.
+      IF sy-subrc = 0.
+        COMMIT WORK.
+        LOOP AT lt_locked_keys INTO lv_key.
+          CALL FUNCTION 'DEQUEUE_E_TABLE'
+            EXPORTING
+              mode_rstable = 'E'
+              tabname      = 'NACH'
+              varkey       = lv_key.
+        ENDLOOP.
+        gt_original = gt_output.
+        IF sy-langu = 'D'.
+          MESSAGE |Es wurden { lv_success } Sätze erfolgreich gesichert.| TYPE 'S'.
+        ELSE.
+          MESSAGE |Saved { lv_success } records successfully.| TYPE 'S'.
+        ENDIF.
+        IF go_grid IS BOUND.
+          go_grid->refresh_table_display( ).
+
+        ELSE.
+          lv_failed = lv_failed + 1.
+        ENDIF.
+      ELSE.
+        ROLLBACK WORK.
+        LOOP AT lt_locked_keys INTO lv_key.
+          CALL FUNCTION 'DEQUEUE_E_TABLE'
+            EXPORTING
+              mode_rstable = 'E'
+              tabname      = 'NACH'
+              varkey       = lv_key.
+        ENDLOOP.
+        IF sy-langu = 'D'.
+          MESSAGE 'Sichern fehlgeschlagen: Datenbankfehler aufgetreten.' TYPE 'E'.
+        ELSE.
+          MESSAGE 'Save failed: Database error occurred.' TYPE 'E'.
+        ENDIF.
       ENDIF.
     ENDIF.
   ENDMETHOD.
