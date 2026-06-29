@@ -317,10 +317,12 @@ CLASS lcl_event_handler IMPLEMENTATION.
     ENDCASE.
   ENDMETHOD.
 
-  METHOD handle_data_changed.
-    lcl_report=>update_colors( ).
-    IF go_grid IS BOUND.
-      go_grid->refresh_table_display( ).
+  METHOD handle_data_changed_finished.
+    IF e_modified = abap_true.
+      lcl_report=>update_colors( ).
+      IF go_grid IS BOUND.
+        go_grid->refresh_table_display( ).
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
@@ -741,7 +743,7 @@ CLASS lcl_report IMPLEMENTATION.
 
     SET HANDLER lcl_event_handler=>handle_toolbar FOR go_grid.
     SET HANDLER lcl_event_handler=>handle_user_command FOR go_grid.
-    SET HANDLER lcl_event_handler=>handle_data_changed FOR go_grid.
+    SET HANDLER lcl_event_handler=>handle_data_changed_finished FOR go_grid.
 
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
