@@ -1,10 +1,39 @@
 *&---------------------------------------------------------------------*
-*& Report ZSBTMP_ZV_NACH
+*& Report ZNACH
 *&---------------------------------------------------------------------*
+* Transaktion   ZNACH
+* Datum         26.06.2026
+*----------------------------------------------------------------------*
+* Firma               CTDI GmbH Malsch Headquarter                     *
+*                                                                      *
+* Beschreibung:  (Funktion)                                            *
 *& Maintenance program for message condition records (NACH) in S/4HANA
 *& Rebuilds the VAKEY field dynamically from the condition tables Bxxx
 *&---------------------------------------------------------------------*
-REPORT zsbtmp_zv_nach NO STANDARD PAGE HEADING.
+* Anforderer:  M.Zaharia
+* Ticket....:  2605-914
+* Konzept...:  ???                                                     *
+* Betreuung.:  ???                                                     *
+*----------------------------------------------------------------------*
+* Entwickler...: SBO-NHS003381
+*
+*----------------------------------------------------------------------*
+
+************************************************************************
+******************** !!!ACHTUNG BITTE BEACHTEN!!! **********************
+************************************************************************
+* !!!      Keine Korrekturen oder Erweiterungen ohne Absprache     !!! *
+* !!!      mit der Anwendungsentwicklung                           !!! *
+*----------------------------------------------------------------------*
+* !!! Keine Korrekturen/Erweiterung ohne Dokumentation in Historie !!! *
+************************************************************************
+* Änderungshistorie                                                    *
+*                                                                      *
+* Datum      Entwickler  Bemerkung                                     *
+*======================================================================*
+* xx.xx.xxxx ???         ???
+*----------------------------------------------------------------------*
+REPORT ZNACH NO STANDARD PAGE HEADING.
 
 TABLES: nach.
 
