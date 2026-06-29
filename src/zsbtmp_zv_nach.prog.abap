@@ -31,7 +31,8 @@
 *                                                                      *
 * Datum      Entwickler  Bemerkung                                     *
 *======================================================================*
-* xx.xx.xxxx ???         ???
+* 29.06.2026 SBO-NHS003381 Farbhervorhebung geänderter Zeilen/Zellen   *
+*                          & grüne Rückmeldung nach Speichern          *
 *----------------------------------------------------------------------*
 REPORT ZNACH NO STANDARD PAGE HEADING.
 
@@ -49,6 +50,8 @@ TYPES:   vakey_disp    TYPE char100,
          tdarmod_disp  TYPE char50,
          nacha_disp    TYPE char50,
          tdocover_disp TYPE char50,
+         cell_colors   TYPE lvc_t_scol,
+         row_color     TYPE char4,
        END OF ty_output.
 
 DATA: gt_output    TYPE STANDARD TABLE OF ty_output,
@@ -241,7 +244,9 @@ CLASS lcl_event_handler DEFINITION FINAL.
       handle_toolbar FOR EVENT toolbar OF cl_gui_alv_grid
         IMPORTING e_object e_interactive,
       handle_user_command FOR EVENT user_command OF cl_gui_alv_grid
-        IMPORTING e_ucomm.
+        IMPORTING e_ucomm,
+      handle_data_changed FOR EVENT data_changed OF cl_gui_alv_grid
+        IMPORTING er_data_changed.
 ENDCLASS.
 
 *---------------------------------------------------------------------*
@@ -253,6 +258,7 @@ CLASS lcl_report DEFINITION FINAL.
       run,
       get_data,
       save_data,
+      update_colors,
       display_alv.
 ENDCLASS.
 
@@ -306,6 +312,13 @@ CLASS lcl_event_handler IMPLEMENTATION.
           go_grid->refresh_table_display( ).
         ENDIF.
     ENDCASE.
+  ENDMETHOD.
+
+  METHOD handle_data_changed.
+    lcl_report=>update_colors( ).
+    IF go_grid IS BOUND.
+      go_grid->refresh_table_display( ).
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.
 
@@ -432,6 +445,15 @@ CLASS lcl_report IMPLEMENTATION.
               tabname      = 'NACH'
               varkey       = lv_key.
         ENDLOOP.
+        LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_out_saved>).
+          CLEAR <ls_out_saved>-cell_colors.
+          READ TABLE lt_nach_new TRANSPORTING NO FIELDS WITH KEY knumh = <ls_out_saved>-knumh.
+          IF sy-subrc = 0.
+            <ls_out_saved>-row_color = 'C500'.
+          ELSE.
+            CLEAR <ls_out_saved>-row_color.
+          ENDIF.
+        ENDLOOP.
         gt_original = gt_output.
 
         DATA(lv_msg) = CONV string( TEXT-m05 ).
@@ -453,6 +475,56 @@ CLASS lcl_report IMPLEMENTATION.
         MESSAGE TEXT-m06 TYPE 'E'.
       ENDIF.
     ENDIF.
+  ENDMETHOD.
+
+  METHOD update_colors.
+    LOOP AT gt_output ASSIGNING FIELD-SYMBOL(<ls_out>).
+      CLEAR: <ls_out>-cell_colors, <ls_out>-row_color.
+
+      READ TABLE gt_original INTO DATA(ls_orig) WITH KEY knumh = <ls_out>-knumh.
+      IF sy-subrc = 0.
+        IF <ls_out>-vsztp_disp <> ls_orig-vsztp_disp.
+          APPEND VALUE #( fname = 'VSZTP_DISP' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-tdarmod_disp <> ls_orig-tdarmod_disp.
+          APPEND VALUE #( fname = 'TDARMOD_DISP' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-nacha_disp <> ls_orig-nacha_disp.
+          APPEND VALUE #( fname = 'NACHA_DISP' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-tdocover_disp <> ls_orig-tdocover_disp.
+          APPEND VALUE #( fname = 'TDOCOVER_DISP' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-anzal <> ls_orig-anzal.
+          APPEND VALUE #( fname = 'ANZAL' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-pfld4 <> ls_orig-pfld4.
+          APPEND VALUE #( fname = 'PFLD4' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-ldest <> ls_orig-ldest.
+          APPEND VALUE #( fname = 'LDEST' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-dsnam <> ls_orig-dsnam.
+          APPEND VALUE #( fname = 'DSNAM' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-dsuf1 <> ls_orig-dsuf1.
+          APPEND VALUE #( fname = 'DSUF1' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-dsuf2 <> ls_orig-dsuf2.
+          APPEND VALUE #( fname = 'DSUF2' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-dimme <> ls_orig-dimme.
+          APPEND VALUE #( fname = 'DIMME' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+        IF <ls_out>-delet <> ls_orig-delet.
+          APPEND VALUE #( fname = 'DELET' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
+        ENDIF.
+
+        IF <ls_out>-cell_colors IS NOT INITIAL.
+          <ls_out>-row_color = 'C100'.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD display_alv.
@@ -599,9 +671,12 @@ CLASS lcl_report IMPLEMENTATION.
     ls_layout-grid_title = TEXT-l01.
     ls_layout-cwidth_opt = 'X'.
     ls_layout-zebra      = 'X'.
+    ls_layout-ctab_fname = 'CELL_COLORS'.
+    ls_layout-info_fname = 'ROW_COLOR'.
 
     SET HANDLER lcl_event_handler=>handle_toolbar FOR go_grid.
     SET HANDLER lcl_event_handler=>handle_user_command FOR go_grid.
+    SET HANDLER lcl_event_handler=>handle_data_changed FOR go_grid.
 
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_enter ).
     go_grid->register_edit_event( i_event_id = cl_gui_alv_grid=>mc_evt_modified ).
