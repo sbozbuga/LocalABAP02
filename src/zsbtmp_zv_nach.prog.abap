@@ -436,7 +436,7 @@ CLASS lcl_report IMPLEMENTATION.
 
         DATA(lv_msg) = CONV string( TEXT-m05 ).
         REPLACE '&1' IN lv_msg WITH |{ lv_success }|.
-        MESSAGE lv_msg TYPE 'S'.
+        MESSAGE lv_msg TYPE 'I'.
 
         IF go_grid IS BOUND.
           go_grid->refresh_table_display( ).
