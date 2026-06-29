@@ -525,9 +525,6 @@ CLASS lcl_report IMPLEMENTATION.
           APPEND VALUE #( fname = 'DELET' color = VALUE #( col = 3 int = 1 ) ) TO <ls_out>-cell_colors.
         ENDIF.
 
-        IF <ls_out>-cell_colors IS NOT INITIAL.
-          <ls_out>-row_color = 'C100'.
-        ENDIF.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
