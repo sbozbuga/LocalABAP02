@@ -320,17 +320,15 @@ CLASS lcl_report IMPLEMENTATION.
               lv_new_val_str = |{ <lv_val_new> }|.
               REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_new_val_str WITH ` `.
               CONDENSE lv_new_val_str.
-              IF lv_new_val_str IS NOT INITIAL.
-                DATA(ls_out) = init_output_row( <ls_dblog> ).
-                ls_out-fname     = ls_field-fieldname.
-                ls_out-ftext     = ls_field-fieldtext.
-                ls_out-value_old = ''.
-                ls_out-value_new = lv_new_val_str.
-                ls_out-icon      = icon_create.
-                APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
-                ls_out-key_disp  = build_key_disp( <ls_row_new> ).
-                APPEND ls_out TO mt_all_logs.
-              ENDIF.
+              DATA(ls_out) = init_output_row( <ls_dblog> ).
+              ls_out-fname     = ls_field-fieldname.
+              ls_out-ftext     = ls_field-fieldtext.
+              ls_out-value_old = ''.
+              ls_out-value_new = lv_new_val_str.
+              ls_out-icon      = icon_create.
+              APPEND VALUE #( fname = 'VALUE_NEW' color = VALUE #( col = 5 int = 1 ) ) TO ls_out-color.
+              ls_out-key_disp  = build_key_disp( <ls_row_new> ).
+              APPEND ls_out TO mt_all_logs.
             ENDIF.
           ENDLOOP.
 
@@ -345,17 +343,15 @@ CLASS lcl_report IMPLEMENTATION.
               lv_old_val_str = |{ <lv_val_old> }|.
               REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>minchar IN lv_old_val_str WITH ` `.
               CONDENSE lv_old_val_str.
-              IF lv_old_val_str IS NOT INITIAL.
-                ls_out = init_output_row( <ls_dblog> ).
-                ls_out-fname     = ls_field-fieldname.
-                ls_out-ftext     = ls_field-fieldtext.
-                ls_out-value_old = lv_old_val_str.
-                ls_out-value_new = ''.
-                ls_out-icon      = icon_delete.
-                APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
-                ls_out-key_disp  = build_key_disp( <ls_row_old> ).
-                APPEND ls_out TO mt_all_logs.
-              ENDIF.
+              ls_out = init_output_row( <ls_dblog> ).
+              ls_out-fname     = ls_field-fieldname.
+              ls_out-ftext     = ls_field-fieldtext.
+              ls_out-value_old = lv_old_val_str.
+              ls_out-value_new = ''.
+              ls_out-icon      = icon_delete.
+              APPEND VALUE #( fname = 'VALUE_OLD' color = VALUE #( col = 3 int = 1 ) ) TO ls_out-color.
+              ls_out-key_disp  = build_key_disp( <ls_row_old> ).
+              APPEND ls_out TO mt_all_logs.
             ENDIF.
           ENDLOOP.
 
