@@ -67,7 +67,7 @@
 *======================================================================*
 * xx.xx.xxxx ???         ???
 *----------------------------------------------------------------------*
-REPORT YTABL_PROTOKOLL.
+REPORT ytabl_protokoll.
 
 TABLES: dbtablog.
 TYPE-POOLS: icon.
@@ -216,14 +216,14 @@ CLASS lcl_report IMPLEMENTATION.
 
   METHOD run.
     get_data( ).
-    IF mt_all_logs IS INITIAL.
-      IF sy-langu = 'D'.
-        MESSAGE 'Keine Protokolleinträge zu den Selektionskriterien gefunden.' TYPE 'S' DISPLAY LIKE 'W'.
-      ELSE.
-        MESSAGE 'No change log entries found matching selection criteria.' TYPE 'S' DISPLAY LIKE 'W'.
-      ENDIF.
-      RETURN.
-    ENDIF.
+**    IF mt_all_logs IS INITIAL.
+**      IF sy-langu = 'D'.
+**        MESSAGE 'Keine Protokolleinträge zu den Selektionskriterien gefunden.' TYPE 'S' DISPLAY LIKE 'W'.
+**      ELSE.
+**        MESSAGE 'No change log entries found matching selection criteria.' TYPE 'S' DISPLAY LIKE 'W'.
+**      ENDIF.
+**      RETURN.
+**    ENDIF.
 
     IF sy-batch = abap_true.
       display_batch( ).
@@ -257,23 +257,41 @@ CLASS lcl_report IMPLEMENTATION.
     ENDTRY.
 
     IF gt_codepages IS INITIAL.
-      SELECT migdate, migtime, codepage FROM prv_log_cp INTO CORRESPONDING FIELDS OF TABLE @gt_codepages.
+      SELECT migdate, migtime, codepage
+        FROM prv_log_cp
+        INTO CORRESPONDING FIELDS OF TABLE @gt_codepages.
       IF sy-subrc = 0.
         SORT gt_codepages BY migdate migtime.
       ENDIF.
     ENDIF.
 
+
+    SELECT COUNT(*)
+      INTO @DATA(lv_cnt)
+      FROM dbtablog
+      WHERE logdate IN @s_logdat
+        AND tabname = @p_tab.
+
+    CHECK lv_cnt GT 0.
+
     SELECT * FROM dbtablog
-      WHERE tabname  = @p_tab
-        AND logdate  IN @s_logdat
-        AND logkey   IN @s_key
-        AND username IN @s_usera
-        AND tcode    IN @s_tcode
-        AND optype   IN @s_optype
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
+      WHERE logdate  IN @s_logdat
+        AND tabname  = @p_tab
+*        AND logkey   IN @s_key
+*        AND username IN @s_usera
+*        AND tcode    IN @s_tcode
+*        AND optype   IN @s_optype
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
+      UP TO @lv_cnt ROWS.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
+
+    DELETE lt_dblog
+      WHERE logkey   NOT IN s_key
+         OR username NOT IN s_usera
+         OR tcode    NOT IN s_tcode
+         OR optype   NOT IN s_optype.
 
     SORT lt_dblog BY logkey ASCENDING logdate ASCENDING logtime ASCENDING.
 
@@ -456,57 +474,146 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT dataln, logdata, versno, logkey FROM dbtablog
-      WHERE tabname = @is_dbtablog-tabname
-        AND logkey  = @is_dbtablog-logkey
-        AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
-      ORDER BY logdate ASCENDING, logtime ASCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs
-      UP TO 1 ROWS.
-    IF sy-subrc = 0.
-      READ TABLE lt_next_logs INTO ls_next_db INDEX 1.
-      IF sy-subrc = 0.
-        populate_key_fields( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
-        decode_row( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
+    IF NOT sy-datum IN s_logdat.
+
+      SELECT COUNT(*)
+        INTO @DATA(lv_cnt) UP TO 1 ROWS
+        FROM dbtablog
+          WHERE tabname = @is_dbtablog-tabname
+            AND logkey  = @is_dbtablog-logkey
+            AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) ).
+
+      IF lv_cnt = 0.
+        TRY.
+            CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
+            ASSIGN lr_row_old->* TO <ls_row_old>.
+            IF sy-subrc = 0.
+              populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+              decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+            ELSE.
+              RETURN.
+            ENDIF.
+          CATCH cx_root.
+            RETURN.
+        ENDTRY.
+
+        LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
+          ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
+          IF sy-subrc = 0.
+            lv_val_str = |{ <lv_val> }|.
+            REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
+            APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
+          ENDIF.
+        ENDLOOP.
+
+        CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
+
+        LOOP AT mt_dfies INTO ls_df_sel.
+          APPEND ls_df_sel-fieldname TO lt_select_fields.
+        ENDLOOP.
+        CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
+
+        SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
+          WHERE (lv_where)
+          INTO @<ls_row_new>.
+        IF sy-subrc <> 0.
+          CLEAR <ls_row_new>.
+        ENDIF.
         RETURN.
       ENDIF.
-    ENDIF.
 
-    TRY.
-        CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
-        ASSIGN lr_row_old->* TO <ls_row_old>.
+
+      SELECT dataln, logdata, versno, logkey FROM dbtablog
+        WHERE tabname = @is_dbtablog-tabname
+          AND logkey  = @is_dbtablog-logkey
+          AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) )
+        ORDER BY logdate ASCENDING, logtime ASCENDING
+        INTO CORRESPONDING FIELDS OF TABLE @lt_next_logs
+        UP TO 1 ROWS.
+      IF sy-subrc = 0.
+        READ TABLE lt_next_logs INTO ls_next_db INDEX 1.
         IF sy-subrc = 0.
-          populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-          decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-        ELSE.
+          populate_key_fields( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
+          decode_row( EXPORTING is_dblog = ls_next_db CHANGING cs_row = <ls_row_new> ).
           RETURN.
         ENDIF.
-      CATCH cx_root.
-        RETURN.
-    ENDTRY.
-
-    LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
-      ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
-      IF sy-subrc = 0.
-        lv_val_str = |{ <lv_val> }|.
-        REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
-        APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
       ENDIF.
-    ENDLOOP.
 
-    CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
+      TRY.
+          CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
+          ASSIGN lr_row_old->* TO <ls_row_old>.
+          IF sy-subrc = 0.
+            populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+            decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+          ELSE.
+            RETURN.
+          ENDIF.
+        CATCH cx_root.
+          RETURN.
+      ENDTRY.
 
-    LOOP AT mt_dfies INTO ls_df_sel.
-      APPEND ls_df_sel-fieldname TO lt_select_fields.
-    ENDLOOP.
-    CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
+      LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
+        ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
+        IF sy-subrc = 0.
+          lv_val_str = |{ <lv_val> }|.
+          REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
+          APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
+        ENDIF.
+      ENDLOOP.
 
-    SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
-      WHERE (lv_where)
-      INTO @<ls_row_new>.
-    IF sy-subrc <> 0.
-      CLEAR <ls_row_new>.
+      CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
+
+      LOOP AT mt_dfies INTO ls_df_sel.
+        APPEND ls_df_sel-fieldname TO lt_select_fields.
+      ENDLOOP.
+      CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
+
+      SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
+        WHERE (lv_where)
+        INTO @<ls_row_new>.
+      IF sy-subrc <> 0.
+        CLEAR <ls_row_new>.
+      ENDIF.
+
+    ELSE.
+
+      TRY.
+          CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
+          ASSIGN lr_row_old->* TO <ls_row_old>.
+          IF sy-subrc = 0.
+            populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+            decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+          ELSE.
+            RETURN.
+          ENDIF.
+        CATCH cx_root.
+          RETURN.
+      ENDTRY.
+
+      LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
+        ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
+        IF sy-subrc = 0.
+          lv_val_str = |{ <lv_val> }|.
+          REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
+          APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
+        ENDIF.
+      ENDLOOP.
+
+      CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
+
+      LOOP AT mt_dfies INTO ls_df_sel.
+        APPEND ls_df_sel-fieldname TO lt_select_fields.
+      ENDLOOP.
+      CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
+
+      SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
+        WHERE (lv_where)
+        INTO @<ls_row_new>.
+      IF sy-subrc <> 0.
+        CLEAR <ls_row_new>.
+      ENDIF.
     ENDIF.
+
   ENDMETHOD.
 
   METHOD display_split_screen.
@@ -591,7 +698,7 @@ CLASS lcl_report IMPLEMENTATION.
                     n_image   = icon_folder
                     exp_image = icon_open_folder
                     style     = cl_gui_simple_tree=>style_default
-                    text      = |Table log entries ({ lv_total_count })| ) TO it_nodes.
+                    text      = |{ p_tab }: Table log entries ({ lv_total_count })| ) TO it_nodes.
 
     LOOP AT mt_all_logs ASSIGNING FIELD-SYMBOL(<ls_log>).
       IF <ls_log>-key_disp <> lv_prev_key.
@@ -642,10 +749,10 @@ CLASS lcl_report IMPLEMENTATION.
     DATA: lt_hide TYPE STANDARD TABLE OF salv_de_column WITH DEFAULT KEY.
     lt_hide = VALUE #( ( 'MANDT' )
                        ( 'TABNAME' )
-                       ( 'TABKEY' )
-                       ( 'OPTYPE' )
-                       ( 'UDATE' )
-                       ( 'UTIME' )
+*                       ( 'TABKEY' )
+*                       ( 'OPTYPE' )
+*                       ( 'UDATE' )
+*                       ( 'UTIME' )
                        ( 'VERSNO' )
                        ( 'COLOR' )
                        ( 'KEY_DISP' ) ).
@@ -701,11 +808,11 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD decode_row.
-    DATA: lr_conv         TYPE REF TO cl_abap_conv_in_ce,
-          ld_offset       TYPE i,
-          ld_add          TYPE i,
-          ld_xstr         TYPE xstring,
-          lv_tabkeylen    TYPE i VALUE 0,
+    DATA: lr_conv          TYPE REF TO cl_abap_conv_in_ce,
+          ld_offset        TYPE i,
+          ld_add           TYPE i,
+          ld_xstr          TYPE xstring,
+          lv_tabkeylen     TYPE i VALUE 0,
           lv_encoding      TYPE abap_encod,
           lv_appl_codepage TYPE tcp00-cpcodepage,
           lv_loop_subrc    LIKE sy-subrc,
@@ -735,7 +842,7 @@ CLASS lcl_report IMPLEMENTATION.
       IMPORTING
         appl_codepage = lv_appl_codepage
       EXCEPTIONS
-        others        = 2.
+        OTHERS        = 2.
     IF sy-subrc = 0.
       lv_encoding = lv_appl_codepage.
     ENDIF.
