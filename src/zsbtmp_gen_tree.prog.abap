@@ -692,6 +692,12 @@ CLASS lcl_report IMPLEMENTATION.
   METHOD refresh_grid.
     DATA: ls_log TYPE ty_output.
 
+    IF id_node_key = 'ROOT'.
+      mt_grid_log = mt_all_logs.
+      go_alv->refresh( ).
+      RETURN.
+    ENDIF.
+
     READ TABLE mt_node_map INTO DATA(ls_map) WITH KEY node_key = id_node_key.
     IF sy-subrc = 0.
       CLEAR mt_grid_log.
