@@ -474,55 +474,7 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF NOT sy-datum IN s_logdat.
-
-      SELECT COUNT(*)
-        INTO @DATA(lv_cnt) UP TO 1 ROWS
-        FROM dbtablog
-          WHERE tabname = @is_dbtablog-tabname
-            AND logkey  = @is_dbtablog-logkey
-            AND ( logdate > @is_dbtablog-logdate OR ( logdate = @is_dbtablog-logdate AND logtime > @is_dbtablog-logtime ) ).
-
-      IF lv_cnt = 0.
-        TRY.
-            CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
-            ASSIGN lr_row_old->* TO <ls_row_old>.
-            IF sy-subrc = 0.
-              populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-              decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-            ELSE.
-              RETURN.
-            ENDIF.
-          CATCH cx_root.
-            RETURN.
-        ENDTRY.
-
-        LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
-          ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
-          IF sy-subrc = 0.
-            lv_val_str = |{ <lv_val> }|.
-            REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
-            APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
-          ENDIF.
-        ENDLOOP.
-
-        CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
-
-        LOOP AT mt_dfies INTO ls_df_sel.
-          APPEND ls_df_sel-fieldname TO lt_select_fields.
-        ENDLOOP.
-        CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
-
-        SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
-          WHERE (lv_where)
-          INTO @<ls_row_new>.
-        IF sy-subrc <> 0.
-          CLEAR <ls_row_new>.
-        ENDIF.
-        RETURN.
-      ENDIF.
-
-
+    IF sy-datum NOT IN s_logdat.
       SELECT dataln, logdata, versno, logkey FROM dbtablog
         WHERE tabname = @is_dbtablog-tabname
           AND logkey  = @is_dbtablog-logkey
@@ -538,80 +490,43 @@ CLASS lcl_report IMPLEMENTATION.
           RETURN.
         ENDIF.
       ENDIF.
+    ENDIF.
 
-      TRY.
-          CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
-          ASSIGN lr_row_old->* TO <ls_row_old>.
-          IF sy-subrc = 0.
-            populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-            decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-          ELSE.
-            RETURN.
-          ENDIF.
-        CATCH cx_root.
-          RETURN.
-      ENDTRY.
-
-      LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
-        ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
+    " Fallback: Select the current state from the active application table
+    TRY.
+        CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
+        ASSIGN lr_row_old->* TO <ls_row_old>.
         IF sy-subrc = 0.
-          lv_val_str = |{ <lv_val> }|.
-          REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
-          APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
-        ENDIF.
-      ENDLOOP.
-
-      CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
-
-      LOOP AT mt_dfies INTO ls_df_sel.
-        APPEND ls_df_sel-fieldname TO lt_select_fields.
-      ENDLOOP.
-      CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
-
-      SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
-        WHERE (lv_where)
-        INTO @<ls_row_new>.
-      IF sy-subrc <> 0.
-        CLEAR <ls_row_new>.
-      ENDIF.
-
-    ELSE.
-
-      TRY.
-          CREATE DATA lr_row_old TYPE (is_dbtablog-tabname).
-          ASSIGN lr_row_old->* TO <ls_row_old>.
-          IF sy-subrc = 0.
-            populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-            decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
-          ELSE.
-            RETURN.
-          ENDIF.
-        CATCH cx_root.
+          populate_key_fields( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+          decode_row( EXPORTING is_dblog = is_dbtablog CHANGING cs_row = <ls_row_old> ).
+        ELSE.
           RETURN.
-      ENDTRY.
-
-      LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
-        ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
-        IF sy-subrc = 0.
-          lv_val_str = |{ <lv_val> }|.
-          REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
-          APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
         ENDIF.
-      ENDLOOP.
+      CATCH cx_root.
+        RETURN.
+    ENDTRY.
 
-      CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
-
-      LOOP AT mt_dfies INTO ls_df_sel.
-        APPEND ls_df_sel-fieldname TO lt_select_fields.
-      ENDLOOP.
-      CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
-
-      SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
-        WHERE (lv_where)
-        INTO @<ls_row_new>.
-      IF sy-subrc <> 0.
-        CLEAR <ls_row_new>.
+    LOOP AT mt_dfies INTO ls_df WHERE keyflag = 'X' AND fieldname <> 'MANDT'.
+      ASSIGN COMPONENT ls_df-fieldname OF STRUCTURE <ls_row_old> TO <lv_val>.
+      IF sy-subrc = 0.
+        lv_val_str = |{ <lv_val> }|.
+        REPLACE ALL OCCURRENCES OF `'` IN lv_val_str WITH `''`.
+        APPEND |{ ls_df-fieldname } = '{ lv_val_str }'| TO lt_where.
       ENDIF.
+    ENDLOOP.
+
+    CONCATENATE LINES OF lt_where INTO lv_where SEPARATED BY ' AND '.
+
+    LOOP AT mt_dfies INTO ls_df_sel.
+      APPEND ls_df_sel-fieldname TO lt_select_fields.
+    ENDLOOP.
+    CONCATENATE LINES OF lt_select_fields INTO lv_select_list SEPARATED BY ', '.
+
+    SELECT SINGLE (lv_select_list) FROM (is_dbtablog-tabname)
+      WHERE (lv_where)
+      INTO @<ls_row_new>.
+    IF sy-subrc <> 0.
+      CLEAR <ls_row_new>.
     ENDIF.
 
   ENDMETHOD.
