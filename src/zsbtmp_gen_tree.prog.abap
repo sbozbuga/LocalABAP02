@@ -265,15 +265,8 @@ CLASS lcl_report IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-
-    SELECT COUNT(*)
-      INTO @DATA(lv_cnt)
-      FROM dbtablog
-      WHERE logdate IN @s_logdat
-        AND tabname = @p_tab.
-
-    CHECK lv_cnt GT 0.
-
+    " ⚡ Bolt Optimization: Removed redundant SELECT COUNT(*) check
+    " Impact: Halves the database queries required for this initial data load
     SELECT * FROM dbtablog
       WHERE logdate  IN @s_logdat
         AND tabname  = @p_tab
@@ -281,8 +274,7 @@ CLASS lcl_report IMPLEMENTATION.
 *        AND username IN @s_usera
 *        AND tcode    IN @s_tcode
 *        AND optype   IN @s_optype
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog
-      UP TO @lv_cnt ROWS.
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dblog.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
